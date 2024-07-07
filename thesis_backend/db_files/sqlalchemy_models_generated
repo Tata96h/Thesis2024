@@ -1,0 +1,132 @@
+# coding: utf-8
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, String, Time, text
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+metadata = Base.metadata
+
+
+class DepartementEtFiliere(Base):
+    __tablename__ = 'departement_et_filiere'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    libelle = Column(String(255), nullable=False)
+    is_filiere = Column(Boolean, nullable=False, server_default=text("true"), comment='filière ou departement')
+    id_departement = Column(String(12), comment="Dans le cas ou c'est une filiere, id_departement indique son departement")
+
+
+class Salle(Base):
+    __tablename__ = 'salle'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    intitule = Column(String(150), nullable=False)
+
+
+class Utilisateur(Base):
+    __tablename__ = 'utilisateur'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    username = Column(String(255), nullable=False)
+    email = Column(String(200), nullable=False)
+    password = Column(String(255), nullable=False)
+    role = Column(String(50), nullable=False, server_default=text("'Etudiant'::character varying"), comment='Administrateur, Etudiant, Enseignant')
+    created_at = Column(DateTime, nullable=False, server_default=text("now()"))
+    is_actif = Column(Boolean, nullable=False, server_default=text("true"))
+
+
+class Enseignant(Base):
+    __tablename__ = 'enseignant'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    grade = Column(String(255), nullable=False)
+    specialite = Column(String(255), nullable=False)
+    id_utilisateur = Column(ForeignKey('public.utilisateur.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'), unique=True)
+    nom = Column(String(50), nullable=False)
+    prenoms = Column(String(150), nullable=False)
+
+    utilisateur = relationship('Utilisateur', uselist=False)
+
+
+class Soutenance(Base):
+    __tablename__ = 'soutenance'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    date = Column(Date)
+    heure = Column(Time)
+    id_salle = Column(ForeignKey('public.salle.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'))
+    decision_du_jury = Column(String, comment='Accepté, Refusé')
+
+    salle = relationship('Salle')
+
+
+class EnseignantDepartementFiliere(Base):
+    __tablename__ = 'enseignant_departement_filiere'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    id_departement_et_filiere = Column(ForeignKey('public.departement_et_filiere.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'))
+    id_enseignant = Column(ForeignKey('public.enseignant.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'))
+    is_relation_avec_departement = Column(Boolean, nullable=False, server_default=text("false"), comment="La relation entre la table enseignant et la table departement_filiere est celle entre l'enseignant et son département ou pas (filière)")
+    is_chef_departement = Column(Boolean, nullable=False, server_default=text("false"))
+    matiere_enseignee = Column(String(200), comment="Matiere enseignée par l'enseignant dans la filière")
+
+    departement_et_filiere = relationship('DepartementEtFiliere')
+    enseignant = relationship('Enseignant')
+
+
+class Jury(Base):
+    __tablename__ = 'jury'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    id_enseignant = Column(ForeignKey('public.enseignant.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'))
+    id_soutenance = Column(ForeignKey('public.soutenance.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'))
+    role = Column(String, nullable=False, server_default=text("'Président'::character varying"), comment='Président, Rapporteur, Examinateur')
+
+    enseignant = relationship('Enseignant')
+    soutenance = relationship('Soutenance')
+
+
+class Memoire(Base):
+    __tablename__ = 'memoire'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    theme = Column(String(255), nullable=False)
+    lieu_stage = Column(String(200))
+    adresse_stage = Column(String(100))
+    contact_stage = Column(String(100))
+    is_theme_valide = Column(Boolean, nullable=False, server_default=text("true"))
+    is_pret_pour_soutenir = Column(Boolean, nullable=False, server_default=text("false"))
+    id_maitre_memoire = Column(ForeignKey('public.enseignant.id'))
+    id_soutenance = Column(ForeignKey('public.soutenance.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'), unique=True)
+
+    enseignant = relationship('Enseignant')
+    soutenance = relationship('Soutenance', uselist=False)
+
+
+class Etudiant(Base):
+    __tablename__ = 'etudiant'
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(String(12), primary_key=True, server_default=text("encode(gen_random_bytes(6), 'hex'::text)"))
+    matricule = Column(String(20), nullable=False)
+    id_utilisateur = Column(ForeignKey('public.utilisateur.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'), unique=True)
+    nom = Column(String(50), nullable=False)
+    prenoms = Column(String(150), nullable=False)
+    date_naissance = Column(Date)
+    genre = Column(String(20))
+    peut_soutenir = Column(Boolean, nullable=False, server_default=text("true"))
+    id_departement_et_filiere = Column(ForeignKey('public.departement_et_filiere.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'))
+    id_memoire = Column(ForeignKey('public.memoire.id', ondelete='SET NULL', onupdate='CASCADE', match='FULL'))
+    id_binome = Column(String(12), comment="identifiant de l'étudiant binome de celui-ci")
+
+    departement_et_filiere = relationship('DepartementEtFiliere')
+    memoire = relationship('Memoire')
+    utilisateur = relationship('Utilisateur', uselist=False)
