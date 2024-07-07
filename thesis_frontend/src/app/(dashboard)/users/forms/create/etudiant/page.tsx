@@ -71,7 +71,7 @@ const AddEtudiant = () => {
     }));
     console.log(newUsernameValue);
   };
- const handleReset = (e) => {
+const handleReset = (e) => {
         e.preventDefault();
         // document.getElementById("sub").disabled = true;
         const inputs = document.querySelectorAll("input , textarea");
@@ -156,8 +156,8 @@ const handleSubmit = async (e) => {
 
         <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
          
-          <div className="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
-            <h3 className="font-medium text-blue-500 dark:text-white">
+          <div className="border-b border-stroke px-6.5  py-4 dark:border-strokedark">
+            <h3 className="font-black text-3xl text-blue-500 dark:text-white">
               Ajouter un étudiant
             </h3>
              <div className="mt-5">
@@ -269,7 +269,7 @@ const handleSubmit = async (e) => {
                 <div className="">
 
                   <button
-                    className=" rounded bg-blue-500 p-3 font-medium text-gray hover:bg-opacity-80"
+                    className=" w-25 h-12 rounded bg-blue-500 p-3 font-medium text-gray hover:bg-opacity-80 border-r-3 "
                     id="sub"
                   >
                     Envoyer
@@ -278,7 +278,7 @@ const handleSubmit = async (e) => {
                 <div className="">
 
                   <button
-                    className=" rounded bg-red p-3 font-medium text-gray hover:bg-opacity-80"
+                    className="w-25 h-12 border-r-3 rounded bg-black p-3 font-medium text-gray hover:bg-opacity-80"
                     id="" onClick={handleReset}
                   >
 Annuler                  </button>

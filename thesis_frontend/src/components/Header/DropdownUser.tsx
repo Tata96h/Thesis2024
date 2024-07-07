@@ -6,87 +6,32 @@ import { useRouter } from "next/navigation";
 const DropdownUser = () => {
   const router = useRouter();
   const [userInfo, setUserInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
-
   const handleLogout = () => {
     localStorage.setItem("sessionIsActive", "0");
     localStorage.removeItem('userInfo');
-    localStorage.removeItem('enseignantInfo');
-    localStorage.removeItem('etudiantInfo');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('tokenType');
     console.log(localStorage);
     
+
     router.push('/login');
   };
 
   const info = localStorage.getItem("userInfo");
   
-  
-  // let utilisateur_id = userInfo.utilisateur_id;
-  const accessToken = localStorage.getItem("access_token");
-  const tokenType = localStorage.getItem("token_type");
 
   useEffect(() => {
     const storedUserInfo = localStorage.getItem('userInfo');
     if (storedUserInfo) {
-      const parsedUserInfo = JSON.parse(storedUserInfo);
-  
-      // Fonction pour récupérer le label du rôle depuis l'API backend
-      const fetchRoleLabel = async () => {
-        try {
-          const url = `http://127.0.0.1:8000/etudiants/get_role_by_id/?id=${parsedUserInfo.role}`;  // URL dynamique avec parsedUserInfo.role
-          const response = await fetch(url, {
-            method: 'GET',
-          });
-          if (response.ok) {
-            const data = await response.json();
-            console.log('Données récupérées pour le rôle', parsedUserInfo.role, data);
-  
-            // Vérifiez que data est un tableau et contient des éléments
-            if (data && data.length > 0 && data[0].libelle) {
-              const roleLabel = data[0].libelle;  // Accéder au premier élément du tableau
-              console.log('Libellé du rôle:', roleLabel);
-              
-              // Mettre à jour parsedUserInfo avec le label du rôle
-              parsedUserInfo.roleLabel = roleLabel;
-              console.log('Mise à jour de parsedUserInfo:', parsedUserInfo);
-              
-              setUserInfo(parsedUserInfo);
-            } else {
-              console.error('Le champ libelle est manquant dans les données retournées:', data);
-            }
-            
-            // Exemple pour la récupération des données de l'enseignant (à adapter selon votre API)
-            if (parsedUserInfo.utilisateur_id && parsedUserInfo.roleLabel === 'Enseignant') {
-              const urlEnseignant = `http://127.0.0.1:8000/enseignants/${parsedUserInfo.utilisateur_id}?utilisateur_id=${parsedUserInfo.utilisateur_id}`;
-              const responseEnseignant = await fetch(urlEnseignant, {
-                method: 'GET',
-              });
-              if (responseEnseignant.ok) {
-                const dataEnseignant = await responseEnseignant.json();
-                console.log('Données récupérées pour utilisateur', parsedUserInfo.utilisateur_id, dataEnseignant);
-                localStorage.setItem("enseignantInfo", JSON.stringify(dataEnseignant));
-                console.log(localStorage);
-                
-              } else {
-                console.error('Erreur lors de la récupération des informations enseignant :', responseEnseignant.status);
-              }
-            }
-          } else {
-            console.error('Erreur lors de la récupération du label du rôle :', response.status);
-          }
-        } catch (error) {
-          console.error('Erreur lors de la récupération du label du rôle :', error);
-        }
-      };
-      
-      fetchRoleLabel();
+        const parsedUserInfo = JSON.parse(storedUserInfo);
+        // Ajouter la logique pour mapper le rôle de l'utilisateur à un libellé approprié
+        parsedUserInfo.roleLabel =  parsedUserInfo.role === 1 
+    ? 'Étudiant' 
+    : parsedUserInfo.role === 2 
+      ? 'Enseignant' 
+      : 'Administrateur';
+        setUserInfo(parsedUserInfo);
     }
-  }, []);
-  
-  
-  
+}, []);
+
     
   const [dropdownOpen, setDropdownOpen] = useState(false);
 

@@ -31,7 +31,6 @@ import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import router from "next/router";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -56,53 +55,74 @@ export function EtudiantTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   // ...
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // Search params
+  const page = searchParams?.get("page") ?? "1";
+  const pageAsNumber = Number(page);
+  const fallbackPage =
+    isNaN(pageAsNumber) || pageAsNumber < 1 ? 1 : pageAsNumber;
+  const per_page = searchParams?.get("limit") ?? "10";
+  const perPageAsNumber = Number(per_page);
+  const fallbackPerPage = isNaN(perPageAsNumber) ? 10 : perPageAsNumber;
+
+  /* this can be used to get the selectedrows 
+  console.log("value", table.getFilteredSelectedRowModel()); */
+
+  // Create query string
+  const createQueryString = React.useCallback(
+    (params: Record<string, string | number | null>) => {
+      const newSearchParams = new URLSearchParams(searchParams?.toString());
+
+      for (const [key, value] of Object.entries(params)) {
+        if (value === null) {
+          newSearchParams.delete(key);
+        } else {
+          newSearchParams.set(key, String(value));
+        }
+      }
+
+      return newSearchParams.toString();
+    },
+    [searchParams],
+  );
+
+  // Handle server-side pagination
+  const [{ pageIndex, pageSize }, setPagination] =
+    React.useState<PaginationState>({
+      pageIndex: fallbackPage - 1,
+      pageSize: fallbackPerPage,
+    });
+
+  React.useEffect(() => {
+    router.push(
+      `${pathname}?${createQueryString({
+        page: pageIndex + 1,
+        limit: pageSize,
+      })}`,
+      {
+        scroll: false,
+      },
+    );
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIndex, pageSize]);
+
   const table = useReactTable({
-    data: data || [], // Initialiser data avec un tableau vide si undefined
+    data,
     columns,
     pageCount: pageCount ?? -1,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    // state: {
-    //   pagination: { pageIndex, pageSize },
-    // },
-    // onPaginationChange: setPagination,
-    // getPaginationRowModel: getPaginationRowModel(),
+    state: {
+      pagination: { pageIndex, pageSize },
+    },
+    onPaginationChange: setPagination,
+    getPaginationRowModel: getPaginationRowModel(),
     manualPagination: true,
     manualFiltering: true,
   });
-
-  const searchValue = table.getColumn(searchKey)?.getFilterValue() as string;
-
-//  React.useEffect(() => {
-//     if (searchValue?.length > 0) {
-//       router.push(
-//         `${pathname}?${createQueryString({
-//           page: null,
-//           limit: null,
-//           search: searchValue,
-//         })}`,
-//         {
-//           scroll: false,
-//         },
-//       );
-//     }
-//     if (searchValue?.length === 0 || searchValue === undefined) {
-//       router.push(
-//         `${pathname}?${createQueryString({
-//           page: null,
-//           limit: null,
-//           search: null,
-//         })}`,
-//         {
-//           scroll: false,
-//         },
-//       );
-//     }
-
-//     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, [searchValue]);
   return (
     <>
       <Input
@@ -245,4 +265,8 @@ export function EtudiantTable<TData, TValue>({
       </div>
     </>
   );
+}
+
+function setPagination(updaterOrValue: Updater<PaginationState>): void {
+  throw new Error("Function not implemented.");
 }

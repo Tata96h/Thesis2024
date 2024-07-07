@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import AlertMessage from "@/components/AlertMessage/page";
 
 const DepotMemoire = () => {
@@ -33,7 +33,14 @@ const DepotMemoire = () => {
     console.log(event.target.files[0]);
     
   };
-
+const handleReset = (e) => {
+        e.preventDefault();
+        // document.getElementById("sub").disabled = true;
+        const inputs = document.querySelectorAll("input , textarea");
+        for (let i = 0; i < inputs.length; i++) {
+          inputs[i].value = "";
+        }
+      };
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { typeDepot, matricules, theme, fichier } = formData;
@@ -92,13 +99,15 @@ const DepotMemoire = () => {
   };
 
   return (
-    <DefaultLayout>
-      <div className="flex justify-center pt-20">
+    // <DefaultLayout>
+      <div className="flex justify-center pt-5">
         <div className="w-full max-w-4xl px-4">
           <div className="flex flex-col gap-9">
+          
             <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+              
               <div className="border-b border-stroke px-6.5 py-4 dark:border-strokedark mb-3">
-                <h3 className="font-medium text-blue-500 dark:text-white">
+                <h3 className="text-3xl font-extrabold text-blue-500 dark:text-white">
                   Dépôt de Mémoire
                 </h3>
                 <div className="mt-5">
@@ -130,7 +139,7 @@ const DepotMemoire = () => {
                         <input
                           type="text"
                           name="binome1"
-                          placeholder="Entrez votre matricule "
+                          placeholder="Matricule du premier membre du binôme"
                           className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                           onChange={handleInputChange}
                         />
@@ -146,7 +155,7 @@ const DepotMemoire = () => {
                         <input
                           type="text"
                           name="binome1"
-                          placeholder="Matricule 1"
+                          placeholder="Matricule du premier membre du binôme"
                           className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                           onChange={handleInputChange}
                         />
@@ -159,7 +168,7 @@ const DepotMemoire = () => {
                         <input
                           type="text"
                           name="binome2"
-                          placeholder="Matricule 2"
+                          placeholder="Matricule du second membre du binôme"
                           className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                           onChange={handleInputChange}
                         />
@@ -195,19 +204,32 @@ const DepotMemoire = () => {
                     />
                   </div>
 
+                  <div className="flex justify-center space-x-20 mt-6 ">
+                <div className="">
+
                   <button
-                    type="submit"
-                    className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray"
+                    className=" w-25 h-12 rounded bg-blue-500 p-3 font-medium text-gray hover:bg-opacity-80 border-r-3 "
+                    id="sub"
                   >
-                    Déposer le mémoire
+                    Déposer
                   </button>
+                </div>
+                <div className="">
+
+                  <button
+                    className="w-25 h-12 border-r-3 rounded bg-black p-3 font-medium text-gray hover:bg-opacity-80"
+                    id="" onClick={handleReset}
+                  >
+Annuler                  </button>
+                </div>
+                </div>
                 </div>
               </form>
             </div>
           </div>
         </div>
       </div>
-    </DefaultLayout>
+    // </DefaultLayout>
   );
 };
 

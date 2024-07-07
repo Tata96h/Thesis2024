@@ -1,8 +1,7 @@
-
 import DefaultLayout from '@/components/Layouts/DefaultLayout'
 
 import { Enseignant } from "@/types/user";
-import { columns } from "@/components/Tables/etudiants-tables/columns";
+import { columns } from "@/components/Tables/enseignants-tables/columns";
 import { EnseignantTable } from "@/components/Tables/enseignants-tables/enseignants-tables";
 import { buttonVariants } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -20,12 +19,11 @@ type paramsProps = {
   };
 };
 
-// eslint-disable-next-line @next/next/no-async-client-component
 export default async function ListeEnseignant({ searchParams }: paramsProps) {
   
  const page = Number(searchParams.page) || 1;
   const pageLimit = Number(searchParams.limit) || 10;
-  const Matricule = searchParams.search || null;
+  const matricule = searchParams.search || null;
   const offset = (page - 1) * pageLimit;
   let enseignant: Enseignant[] = [];
   let totalUsers = 0;
@@ -45,6 +43,8 @@ export default async function ListeEnseignant({ searchParams }: paramsProps) {
     
     const enseignantRes = await response.json();
     enseignant = enseignantRes.enseignants;
+    // console.log(enseignantRes);
+    
     totalUsers = enseignantRes.total_users; 
   } catch (error) {
     console.error("Erreur lors de la récupération des enseignants:", error);
@@ -66,15 +66,14 @@ export default async function ListeEnseignant({ searchParams }: paramsProps) {
 
           <Link
             href={"/users/forms/create/enseignant"}
-            className={cn(buttonVariants({ variant: "default" }))}
-          >
+ className={cn(buttonVariants ({ variant: "default" }), "bg-blue-500 hover:bg-blue-600 text-white")}          >
             <Plus className="mr-2 h-4 w-4" /> Ajouter un nouveau enseignant
           </Link>
         </div>
         <Separator />
 
         <EnseignantTable
-          searchKey=""
+          searchKey="matricule"
           pageNo={page}
           columns={columns}
           totalUsers={totalUsers}

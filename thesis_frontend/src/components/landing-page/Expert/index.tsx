@@ -60,7 +60,7 @@ if(currentIndex>cards.length-3) {
   console.log("hi")
 }
   return (
-<div className='mx-auto max-w-2xl lg:max-w-7xl sm:py-4 lg:px-8'>
+<div className='  mx-auto max-w-2xl lg:max-w-7xl sm:py-4 lg:px-8'>
    <div className="text-center">
                         <Fade direction={'up'} delay={400} cascade damping={1e-1} triggerOnce={true}>
                             <h2 className='text-pink text-lg font-normal mb-3 tracking-widest uppercase ls-51'>Etudiants brillants</h2>
@@ -73,7 +73,7 @@ Voir nos meilleurs étudiants                            </h3>
 
 
 
-    <div className="mt-2">
+    <div className=" flex justify-center mt-2">
       <div className="">
         <div className="relative">
           

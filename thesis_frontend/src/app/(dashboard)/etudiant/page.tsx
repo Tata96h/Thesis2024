@@ -1,275 +1,206 @@
-"use client"
+"use client";
+import { useState } from "react";
+import Head from "next/head";
+import { Label } from "@radix-ui/react-label";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import Image from "next/image";
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import ChoixMaitreMemoire from "@/components/memory/page";
 
-import { useState, useRef } from "react"
-import Image from 'next/image'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Layout } from "lucide-react"
+import DepotMemoire from "../users/forms/create/memory/page";
 
-export default function StudentDashboard() {
+export default function StudentSpace() {
+  const [activeTab, setActiveTab] = useState("tableau de bord");
+  const [file, setFile] = useState(null);
+  const [theme, setTheme] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    studentId: "12345",
-    profilePicture: null
-  })
+    name: "Jean Dupont",
+    email: "jean.dupont@email.com",
+    avatar: "https://via.placeholder.com/150",
+    department: "Informatique",
+    year: "3ème année",
+    thesisStatus: "En cours",
+    chefmemoryStatus: "Dr AGOSSOU Carlos",
+  });
 
-  const [thesis, setThesis] = useState({
-    title: "",
-    file: null,
-  })
-
-  const [internship, setInternship] = useState({
-    company: "",
-    address: "",
-    supervisor: "",
-    startDate: "",
-    endDate: "",
-  })
-
-  const fileInputRef = useRef(null)
-
+  const handleFileChange = (e) => setFile(e.target.files[0]);
+  const handleThemeChange = (e) => setTheme(e.target.value);
   const handleProfileChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value })
-  }
+    setProfile((prevProfile) => ({
+      ...prevProfile,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
-  const handleProfilePictureChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setProfile({ ...profile, profilePicture: reader.result })
-      }
-      reader.readAsDataURL(file)
-    }
-  }
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => !prev);
+  };
 
-  const handleThesisChange = (e) => {
-    if (e.target.name === "file") {
-      setThesis({ ...thesis, file: e.target.files[0] })
-    } else {
-      setThesis({ ...thesis, [e.target.name]: e.target.value })
-    }
-  }
+  const NavBar = () => (
+    <nav className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
+      <div className="container mx-auto flex justify-between items-center">
+        <h1 className="text-2xl font-bold">EspacEtudiant</h1>
+        <div className="flex space-x-4">
+          {["Tableau de bord", "Mémoire", "Planification"].map((item) => (
+            <button
+              key={item}
+              onClick={() => setActiveTab(item.toLowerCase())}
+              className={`px-3 py-2 rounded-full transition-colors duration-300 ${
+                activeTab === item.toLowerCase()
+                  ? "bg-black text-white"
+                  : "bg-gray-200 text-black"
+              }`}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden text-white bg-gray-700 hover:bg-gray-600 p-2 rounded"
+        >
+          
+        </button>
+      </div>
+    </nav>
+  );
 
-  const handleInternshipChange = (e) => {
-    setInternship({ ...internship, [e.target.name]: e.target.value })
-  }
+  const Footer = () => (
+    <footer className="bg-gray-800 text-white p-4 mt-8">
+      <div className="container mx-auto text-center">
+        <p>&copy; 2024 EspaceEtudiant. Tous droits réservés.</p>
+      </div>
+    </footer>
+  );
 
-  const handleProfileSubmit = (e) => {
-    e.preventDefault()
-    console.log("Profile updated:", profile)
-    // Implement API call to update profile
-  }
+  const ProfileSection = () => (
+    <div className="bg-white p-6 rounded-lg shadow-lg">
+      <div className="flex flex-col md:flex-row">
+        <div className="md:w-2/3 md:pl-8">
+         
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold mb-4">Statut</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-blue-100 p-4 rounded-lg">
+                <h4 className="font-bold text-lg mb-2">Statut du mémoire</h4>
+                <p>{profile.thesisStatus}</p>
+              </div>
+              <div className="bg-green-100 p-4 rounded-lg">
+                <h4 className="font-bold text-lg mb-2">Maître-mémoire</h4>
+                <p>{profile.chefmemoryStatus}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
-  const handleThesisSubmit = (e) => {
-    e.preventDefault()
-    console.log("Thesis submitted:", thesis)
-    // Implement API call to submit thesis
-  }
-
-  const handleInternshipSubmit = (e) => {
-    e.preventDefault()
-    console.log("Internship info submitted:", internship)
-    // Implement API call to submit internship info
-  }
-
-  const triggerFileInput = () => {
-    fileInputRef.current.click()
-  }
+  const UploadThesis = () => {
+  const [activeForm, setActiveForm] = useState(null);
 
   return (
-
-    <div className="flex-1 space-y-4 p-8 pt-6">
-
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight"></h2>
+    <div className="bg-white p-6 rounded-lg shadow-lg">
+      <div className="flex space-x-4 mb-6">
+        <div 
+          onClick={() => setActiveForm('choix')}
+          className={`w-1/2 p-6 rounded-lg cursor-pointer transition-all duration-300 ${
+            activeForm === 'choix' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+          }`}
+        >
+          <h3 className="text-xl font-semibold mb-2">Choix de maître mémoire</h3>
+          <p>Cliquez ici pour choisir votre maître de mémoire</p>
+        </div>
+        <div
+          onClick={() => setActiveForm('depot')}
+          className={`w-1/2 p-6 rounded-lg cursor-pointer transition-all duration-300 ${
+            activeForm === 'depot' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+          }`}
+        >
+          <h3 className="text-xl font-semibold mb-2">Dépôt de mémoire</h3>
+          <p>Cliquez ici pour déposer votre mémoire</p>
+        </div>
       </div>
-      <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="profile">Profil</TabsTrigger>
-          <TabsTrigger value="thesis">Dépôt de Mémoire</TabsTrigger>
-          <TabsTrigger value="internship">Stage</TabsTrigger>
-        </TabsList>
-        <TabsContent value="profile" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profil</CardTitle>
-              <CardDescription>
-                Gérez vos informations personnelles ici.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleProfileSubmit} className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={profile.profilePicture} alt="Profile picture" />
-                    <AvatarFallback>{profile.firstName[0]}{profile.lastName[0]}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <Button type="button" onClick={triggerFileInput}>
-                      Changer la photo
-                    </Button>
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleProfilePictureChange}
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label htmlFor="firstName">Prénom</Label>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      value={profile.firstName}
-                      onChange={handleProfileChange}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="lastName">Nom</Label>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      value={profile.lastName}
-                      onChange={handleProfileChange}
-                    />
-                  </div>
-                </div>
+      {activeForm === 'choix' && (
+        <div className="mt-6 bg-gray-100 p-4 rounded">
+          <ChoixMaitreMemoire />
+        </div>
+      )}
 
-                <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={profile.email}
-                    onChange={handleProfileChange}
-                  />
-                </div>
+      {activeForm === 'depot' && (
+        <div className="mt-6 bg-gray-100 p-4 rounded">
+          <DepotMemoire />
+        </div>
+      )}
 
-                <div className="space-y-1">
-                  <Label htmlFor="studentId">Numéro étudiant</Label>
-                  <Input
-                    id="studentId"
-                    name="studentId"
-                    value={profile.studentId}
-                    onChange={handleProfileChange}
-                  />
-                </div>
-
-                <Button type="submit">Mettre à jour le profil</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="thesis" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Dépôt de Mémoire</CardTitle>
-              <CardDescription>
-                Déposez votre mémoire ici.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <form onSubmit={handleThesisSubmit}>
-                <div className="space-y-1">
-                  <Label htmlFor="title">Thème du mémoire</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    value={thesis.title}
-                    onChange={handleThesisChange}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="file">Fichier du mémoire</Label>
-                  <Input
-                    id="file"
-                    name="file"
-                    type="file"
-                    onChange={handleThesisChange}
-                  />
-                </div>
-                <Button type="submit" className="mt-4">Déposer</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="internship" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informations de Stage</CardTitle>
-              <CardDescription>
-                Fournissez les détails de votre stage.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <form onSubmit={handleInternshipSubmit}>
-                <div className="space-y-1">
-                  <Label htmlFor="company">Entreprise</Label>
-                  <Input
-                    id="company"
-                    name="company"
-                    value={internship.company}
-                    onChange={handleInternshipChange}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="address">Adresse</Label>
-                  <Textarea
-                    id="address"
-                    name="address"
-                    value={internship.address}
-                    onChange={handleInternshipChange}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="supervisor">Superviseur</Label>
-                  <Input
-                    id="supervisor"
-                    name="supervisor"
-                    value={internship.supervisor}
-                    onChange={handleInternshipChange}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="startDate">Date de début</Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={internship.startDate}
-                    onChange={handleInternshipChange}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="endDate">Date de fin</Label>
-                  <Input
-                    id="endDate"
-                    name="endDate"
-                    type="date"
-                    value={internship.endDate}
-                    onChange={handleInternshipChange}
-                  />
-                </div>
-                <Button type="submit" className="mt-4">Enregistrer</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
+      {!activeForm && (
+        <p className="text-center text-gray-500 mt-6">
+          Veuillez sélectionner une option ci-dessus.
+        </p>
+      )}
     </div>
-  )
+  );
+};
+
+
+
+const PlanningSection = () => {
+  const isPlanningAvailable = false; 
+
+  if (!isPlanningAvailable) {
+    return (
+      <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <ExclamationTriangleIcon className="h-16 w-16 text-yellow-400" />
+          <h2 className="text-2xl font-semibold text-gray-800">Planification</h2>
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 max-w-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Cette fonctionnalité n'est pas encore disponible.
+                </p>
+                <p className="text-sm text-yellow-700 mt-2">
+                  Nous travaillons dur pour la mettre en place. Veuillez vérifier ultérieurement.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Le contenu réel de la planification ira ici
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-lg">
+      <h2 className="text-2xl font-semibold mb-4">Planification</h2>
+      {/* Ajoutez ici le contenu de la planification lorsqu'il sera disponible */}
+    </div>
+  );
+};
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <Head>
+        <title>EspacEtudiant - Profil</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <NavBar />
+
+      <main className="flex-grow container text-black mx-auto p-4">
+        {activeTab === "tableau de bord" && <ProfileSection />}
+        {activeTab === "mémoire" && <UploadThesis />}
+        {activeTab === "planification" && <PlanningSection />}
+      </main>
+
+      <Footer />
+    </div>
+  );
 }

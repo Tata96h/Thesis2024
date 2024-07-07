@@ -1,4 +1,4 @@
-// "use client";
+"use client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Etudian } from "@/constants/data";
 import { ColumnDef } from "@tanstack/react-table";
@@ -25,6 +25,10 @@ export const columns: ColumnDef<Etudian>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: "matricule",
+    header: "Matricule",
+  },
+  {
     accessorKey: "utilisateur.nom",
     header: "Nom",
   },
@@ -36,19 +40,13 @@ export const columns: ColumnDef<Etudian>[] = [
     accessorKey: "utilisateur.username",
     header: "Email",
   },
-  // {
-  //   accessorKey: "filiere.nom",
-  //   header: "Filière",
-  // },
-  // {
-  //   accessorKey: "utilisateur.username",
-  //   header: "Nom d'utilisateur",
-  // },
   {
-    accessorKey: "matricule",
-    header: "Matricule",
+    accessorKey: "filiere.nom",
+    header: "Filière",
   },
+  
   {
+    header: "Actions",
     id: "actions",
     cell: ({ row }) => <CellAction data={row.original} />,
   },

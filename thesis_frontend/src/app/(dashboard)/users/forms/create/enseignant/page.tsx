@@ -129,6 +129,7 @@ const AddEnseignant = () => {
 
     fetchDepartementOptions();
   }, []);
+
  const handleReset = (e) => {
         e.preventDefault();
         // document.getElementById("sub").disabled = true;
@@ -137,7 +138,6 @@ const AddEnseignant = () => {
           inputs[i].value = "";
         }
       };
- 
    
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -189,7 +189,7 @@ const handleSubmit = async (e) => {
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
            
             <div className="border-b border-stroke px-6.5 py-4 dark:border-strokedark mb-3">
-              <h3 className="font-medium text-blue-500 dark:text-white ">
+              <h3 className="font-black text-3xl text-blue-500 dark:text-white ">
                 Ajouter un enseignant
               </h3>
               <div className="mt-5">
@@ -259,8 +259,7 @@ const handleSubmit = async (e) => {
                         className="relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-5 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                         onChange={handleDepartementChange}
                       >
-                        <option    
->Selectionnez un département</option>
+                        <option>                   Sélectionnez un département</option>
                         {departementOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
@@ -330,7 +329,7 @@ const handleSubmit = async (e) => {
                 <div className="">
 
                   <button
-                    className=" rounded bg-blue-500 p-3 font-medium text-gray hover:bg-opacity-80"
+                    className=" w-25 h-12 border-r-3 rounded bg-blue-500 p-3 font-medium text-gray hover:bg-opacity-80"
                     id="sub"
                   >
                     Envoyer
@@ -339,10 +338,11 @@ const handleSubmit = async (e) => {
                 <div className="">
 
                   <button
-                    className=" rounded bg-red p-3 font-medium text-gray hover:bg-opacity-80"
+                    className="w-25 h-12 border-r-3 rounded bg-black p-3 font-medium text-gray hover:bg-opacity-80"
                     id="" onClick={handleReset}
                   >
-Annuler                  </button>
+         Annuler        
+                  </button>
                 </div>
                 </div>
               </div>

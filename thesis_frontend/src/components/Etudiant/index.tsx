@@ -1,57 +1,200 @@
 "use client";
-import React from "react";
 
-import CardDataStats from "../CardDataStats";
-import ChartTwo from "../Charts/ChartTwo";
-// import MapOne from "../Maps/MapOne";
+import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowBigLeft, Menu, Settings, User, FileText, Briefcase, Home } from "lucide-react";
 
-const Etudiant: React.FC = () => {
+interface UserInfo {
+  firstName: string;
+  lastName: string;
+  matricule: string;
+  grade: string;
+  department: string;
+  profileImage: string;
+}
+
+const EtudiantDashboard = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const sidebar = useRef<any>(null);
+
+  // Ces valeurs devraient idéalement provenir d'une API ou d'un état global
+  const maitreMemoire = "Dr. Jane Doe";
+  const memoireDepose = false;
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await fetch('http://your-fastapi-url/api/user/1');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des données utilisateur');
+        }
+        const data = await response.json();
+        setUserInfo(data);
+      } catch (error) {
+        console.error('Erreur:', error);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return (
+          <div className="p-6 bg-white rounded-lg shadow-md">
+            <h1 className="text-2xl font-bold mb-6">Tableau de bord de l'étudiant</h1>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <h2 className="text-xl font-semibold mb-2">Maître-mémoire</h2>
+                {maitreMemoire ? (
+                  <p className="text-green-600">{maitreMemoire}</p>
+                ) : (
+                  <p className="text-red-600">Aucun maître-mémoire choisi</p>
+                )}
+              </div>
+
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <h2 className="text-xl font-semibold mb-2">État du mémoire</h2>
+                {memoireDepose ? (
+                  <p className="text-green-600">Mémoire déposé</p>
+                ) : (
+                  <p className="text-red-600">Mémoire non déposé</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      case "profile":
+        return <div>Contenu du profil</div>;
+      case "memoire":
+        return <div>Contenu du dépôt de mémoire</div>;
+      case "stage":
+        return <div>Contenu du stage</div>;
+      default:
+        return <div>Sélectionnez un onglet</div>;
+    }
+  };
+
   return (
-    <>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5 mt-20">
-        
-        <CardDataStats title="Maître-mémoire" value="2" rate="" >
-         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>
-         <path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
-         </svg>
-        </CardDataStats>
-        <CardDataStats title="Utilisateurs" total="100" rate="" >
-          <svg
-            className="fill-primary dark:fill-white"
-            width="22"
-            height="18"
-            viewBox="0 0 22 18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M7.18418 8.03751C9.31543 8.03751 11.0686 6.35313 11.0686 4.25626C11.0686 2.15938 9.31543 0.475006 7.18418 0.475006C5.05293 0.475006 3.2998 2.15938 3.2998 4.25626C3.2998 6.35313 5.05293 8.03751 7.18418 8.03751ZM7.18418 2.05626C8.45605 2.05626 9.52168 3.05313 9.52168 4.29063C9.52168 5.52813 8.49043 6.52501 7.18418 6.52501C5.87793 6.52501 4.84668 5.52813 4.84668 4.29063C4.84668 3.05313 5.9123 2.05626 7.18418 2.05626Z"
-              fill=""
-            />
-            <path
-              d="M15.8124 9.6875C17.6687 9.6875 19.1468 8.24375 19.1468 6.42188C19.1468 4.6 17.6343 3.15625 15.8124 3.15625C13.9905 3.15625 12.478 4.6 12.478 6.42188C12.478 8.24375 13.9905 9.6875 15.8124 9.6875ZM15.8124 4.7375C16.8093 4.7375 17.5999 5.49375 17.5999 6.45625C17.5999 7.41875 16.8093 8.175 15.8124 8.175C14.8155 8.175 14.0249 7.41875 14.0249 6.45625C14.0249 5.49375 14.8155 4.7375 15.8124 4.7375Z"
-              fill=""
-            />
-            <path
-              d="M15.9843 10.0313H15.6749C14.6437 10.0313 13.6468 10.3406 12.7874 10.8563C11.8593 9.61876 10.3812 8.79376 8.73115 8.79376H5.67178C2.85303 8.82814 0.618652 11.0625 0.618652 13.8469V16.3219C0.618652 16.975 1.13428 17.4906 1.7874 17.4906H20.2468C20.8999 17.4906 21.4499 16.9406 21.4499 16.2875V15.4625C21.4155 12.4719 18.9749 10.0313 15.9843 10.0313ZM2.16553 15.9438V13.8469C2.16553 11.9219 3.74678 10.3406 5.67178 10.3406H8.73115C10.6562 10.3406 12.2374 11.9219 12.2374 13.8469V15.9438H2.16553V15.9438ZM19.8687 15.9438H13.7499V13.8469C13.7499 13.2969 13.6468 12.7469 13.4749 12.2313C14.0937 11.7844 14.8499 11.5781 15.6405 11.5781H15.9499C18.0812 11.5781 19.8343 13.3313 19.8343 15.4625V15.9438H19.8687Z"
-              fill=""
-            />
-          </svg>
-        </CardDataStats>
-      </div>
+    <div className="flex h-screen bg-gray-100">
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-50 p-2 bg-black rounded-md lg:hidden"
+      >
+        <Menu className="w-6 h-6 text-white" />
+      </button>
 
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
-        {/* {/* <ChartOne /> */}
-        <ChartTwo />
-        {/* <ChartThree /> */} */}
-        {/* <MapOne /> */}
-        {/* <div className="col-span-12 xl:col-span-8">
-          <TableOne />
-        </div> */}
-        {/* <ChatCard /> */}
-      </div>
-    </>
+      <aside
+        ref={sidebar}
+        className={`fixed left-0 top-0 z-40 flex h-screen w-72 flex-col overflow-y-hidden bg-black duration-300 ease-linear dark:bg-boxdark ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:static lg:translate-x-0`}
+      >
+        <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5 bg-white">
+          <Link href="/">
+            <Image
+              width={176}
+              height={32}
+              src={"/images/logo/sm.png"}
+              alt="Logo"
+              priority
+            />
+          </Link>
+
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-controls="sidebar"
+            aria-expanded={sidebarOpen}
+            className="block lg:hidden"
+          >
+            <ArrowBigLeft />
+          </button>
+        </div>
+
+        <div className="flex flex-col overflow-y-auto duration-300 ease-linear">
+          <nav className="mt-5 py-4 px-4 lg:mt-9 lg:px-6">
+            <div className="mb-6 flex flex-col items-center">
+              <div className="relative mb-4 h-28 w-28 rounded-full">
+                <Image
+                  src={"/images/user/user-01.png"}
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-full"
+                  alt="user profile"
+                />
+              </div>
+              <h3 className="mb-1 text-xl font-semibold text-white">
+                {userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : "John Doe"}
+              </h3>
+              <p className="mb-1 text-sm text-white/60">
+                {userInfo ? userInfo.matricule : "Matricule:19650122"}
+              </p>
+              {userInfo && (
+                <>
+                  <p className="mb-1 text-sm text-white/60">{userInfo.grade}</p>
+                  <p className="text-sm text-white/60">{userInfo.department}</p>
+                </>
+              )}
+            </div>
+
+            <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`flex items-center w-full text-white mb-4 p-2 rounded hover:bg-gray-700 ${activeTab === "dashboard" ? "bg-gray-700" : ""}`}
+            >
+              <Home className="mr-2" />
+              Tableau de bord
+            </button>
+
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center w-full text-white mb-4 p-2 rounded hover:bg-gray-700"
+            >
+              <Settings className="mr-2" />
+              Paramètres
+            </button>
+
+            {showSettings && (
+              <div className="ml-4">
+                <button
+                  onClick={() => setActiveTab("profile")}
+                  className={`flex items-center text-white mb-2 p-2 rounded hover:bg-gray-700 ${activeTab === "profile" ? "bg-gray-700" : ""}`}
+                >
+                  <User className="mr-2" />
+                  Profil
+                </button>
+                <button
+                  onClick={() => setActiveTab("memoire")}
+                  className={`flex items-center text-white mb-2 p-2 rounded hover:bg-gray-700 ${activeTab === "memoire" ? "bg-gray-700" : ""}`}
+                >
+                  <FileText className="mr-2" />
+                  Dépôt de mémoire
+                </button>
+                <button
+                  onClick={() => setActiveTab("stage")}
+                  className={`flex items-center text-white mb-2 p-2 rounded hover:bg-gray-700 ${activeTab === "stage" ? "bg-gray-700" : ""}`}
+                >
+                  <Briefcase className="mr-2" />
+                  Stage
+                </button>
+              </div>
+            )}
+          </nav>
+        </div>
+      </aside>
+
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+        <div className="container mx-auto px-6 py-8">
+          {renderContent()}
+        </div>
+      </main>
+    </div>
   );
 };
 
-export default ECommerce;
+export default EtudiantDashboard;

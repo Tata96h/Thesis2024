@@ -1,3 +1,4 @@
+"use client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Enseignan } from "@/constants/data";
 import { ColumnDef } from "@tanstack/react-table";
@@ -24,27 +25,29 @@ export const columns: ColumnDef<Enseignan>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: "matricule",
+    header: "Matricule",
+  },
+  {
     accessorKey: "utilisateur.nom",
-    header: "hh",
+    header: "Nom",
   },
   {
     accessorKey: "utilisateur.prenoms",
     header: "Prénoms",
   },
   
-  // {
-  //   accessorKey: "filiere.nom",
-  //   header: "Filière",
-  // },
+  {
+    accessorKey: "grade.nom",
+    header: "Grade",
+  },
   {
     accessorKey: "utilisateur.username",
-    header: "Nom d'utilisateur",
+    header: "Email",
   },
+  
   {
-    accessorKey: "matricule",
-    header: "Matricule",
-  },
-  {
+    header: "Actions",
     id: "actions",
     cell: ({ row }) => <CellAction data={row.original} />,
   },

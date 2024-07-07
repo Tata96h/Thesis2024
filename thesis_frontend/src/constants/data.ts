@@ -15,6 +15,11 @@ export type Etudian = {
   email: string;
   bio: string;
 };
+export type Choi = {
+  theme: string;
+  choix1: string;
+  choix2: string;
+};
 export type Enseignan = {
   matricule: any;
   id: number;

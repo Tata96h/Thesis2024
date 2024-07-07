@@ -1,3 +1,4 @@
+// "use client";
 
 import DefaultLayout from '@/components/Layouts/DefaultLayout';
 
@@ -41,6 +42,8 @@ export default async function ListeEtudiant({ searchParams }: paramsProps) {
 
     const etudiantRes = await response.json();
     etudiant = etudiantRes.etudiants;
+   
+    
     totalUsers = etudiantRes.total_users; // Remplacez par etudiantRes.total_users si disponible
   } catch (error) {
     console.error("Erreur lors de la récupération des étudiants:", error);
@@ -59,15 +62,15 @@ export default async function ListeEtudiant({ searchParams }: paramsProps) {
           />
           <Link
             href={"/users/forms/create/etudiant"}
-            className={cn(buttonVariants({ variant: "default" }))}
+            className={cn(buttonVariants ({ variant: "default" }), "bg-blue-500 hover:bg-blue-600 text-white")}
           >
-            <Plus className="mr-2 h-4 w-4" /> Ajouter un nouveau étudiant
+            <Plus className="mr-2 h-4 w-4" /> Ajouter un nouveau étudiant 
           </Link>
         </div>
         <Separator />
 
         <EtudiantTable
-          searchKey="matricule"
+          searchKey=""
           pageNo={page}
           columns={columns}
           totalUsers={totalUsers}

@@ -53,7 +53,58 @@ export function EnseignantTable<TData, TValue>({
   pageCount,
   pageSizeOptions = [10, 20, 30, 40, 50],
 }: DataTableProps<TData, TValue>) {
-  // ...
+ const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = searchParams?.get("page") ?? "1";
+  const pageAsNumber = Number(page);
+  const fallbackPage =
+    isNaN(pageAsNumber) || pageAsNumber < 1 ? 1 : pageAsNumber;
+  const per_page = searchParams?.get("limit") ?? "10";
+  const perPageAsNumber = Number(per_page);
+  const fallbackPerPage = isNaN(perPageAsNumber) ? 10 : perPageAsNumber;
+
+  /* this can be used to get the selectedrows 
+  console.log("value", table.getFilteredSelectedRowModel()); */
+
+  // Create query string
+  const createQueryString = React.useCallback(
+    (params: Record<string, string | number | null>) => {
+      const newSearchParams = new URLSearchParams(searchParams?.toString());
+
+      for (const [key, value] of Object.entries(params)) {
+        if (value === null) {
+          newSearchParams.delete(key);
+        } else {
+          newSearchParams.set(key, String(value));
+        }
+      }
+
+      return newSearchParams.toString();
+    },
+    [searchParams],
+  );
+
+  // Handle server-side pagination
+  const [{ pageIndex, pageSize }, setPagination] =
+    React.useState<PaginationState>({
+      pageIndex: fallbackPage - 1,
+      pageSize: fallbackPerPage,
+    });
+
+  React.useEffect(() => {
+    router.push(
+      `${pathname}?${createQueryString({
+        page: pageIndex + 1,
+        limit: pageSize,
+      })}`,
+      {
+        scroll: false,
+      },
+    );
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIndex, pageSize]);
 
   const table = useReactTable({
     data: data || [], // Initialiser data avec un tableau vide si undefined
@@ -61,10 +112,10 @@ export function EnseignantTable<TData, TValue>({
     pageCount: pageCount ?? -1,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    // state: {
-    //   pagination: { pageIndex, pageSize },
-    // },
-    // onPaginationChange: setPagination,
+    state: {
+      pagination: { pageIndex, pageSize },
+    },
+    onPaginationChange: setPagination,
     getPaginationRowModel: getPaginationRowModel(),
     manualPagination: true,
     manualFiltering: true,
@@ -72,12 +123,40 @@ export function EnseignantTable<TData, TValue>({
 
   const searchValue = table.getColumn(searchKey)?.getFilterValue() as string;
 
-  // ...
+React.useEffect(() => {
+    if (searchValue?.length > 0) {
+      router.push(
+        `${pathname}?${createQueryString({
+          page: null,
+          limit: null,
+          search: searchValue,
+        })}`,
+        {
+          scroll: false,
+        },
+      );
+    }
+    if (searchValue?.length === 0 || searchValue === undefined) {
+      router.push(
+        `${pathname}?${createQueryString({
+          page: null,
+          limit: null,
+          search: null,
+        })}`,
+        {
+          scroll: false,
+        },
+      );
+    }
+
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+
+  }, [searchValue]);
 
   return (
     <>
       <Input
-        placeholder={`Rechercher ...${searchKey}`}
+        placeholder={`Search ${searchKey}...`}
         value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
         onChange={(event) =>
           table.getColumn(searchKey)?.setFilterValue(event.target.value)
@@ -105,11 +184,11 @@ export function EnseignantTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? ( // Vérifier que table.getRowModel().rows n'est pas undefined
+            {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selectionné"}
+                  data-state={row.getIsSelected() && "sélectionnée"}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -127,8 +206,7 @@ export function EnseignantTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Aucun résultat
-                </TableCell>
+Aucun résultat                </TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -140,12 +218,12 @@ export function EnseignantTable<TData, TValue>({
         <div className="flex items-center justify-between w-full">
           <div className="flex-1 text-sm text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} Ligne(s) séletionnée(s).
+            {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée (s).
           </div>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8">
             <div className="flex items-center space-x-2">
               <p className="whitespace-nowrap text-sm font-medium">
-                Lignes par page
+                Ligne par page
               </p>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
@@ -171,7 +249,7 @@ export function EnseignantTable<TData, TValue>({
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full">
           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} à{" "}
+            Page {table.getState().pagination.pageIndex + 1} à {" "}
             {table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">

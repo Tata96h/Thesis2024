@@ -32,9 +32,8 @@ const Drawer = ({ children, isOpen, setIsOpen }: DrawerProps) => {
                     <header className="px-4 py-4 flex items-center justify-between">
 
                         <div className="flex flex-shrink-0 items-center border-right">
-                            <Image src="/images/Logo/Logo.svg" alt="logo" width={16} height={10} />
                             <Link href="/" className='text-2xl font-semibold text-black ml-4'>
-                                Chef&apos;s Kitchen.
+                            <Image src="/images/Logo/sm.png" alt="logo" width={90} height={90} />
                             </Link>
                         </div>
 

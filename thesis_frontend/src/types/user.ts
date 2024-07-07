@@ -10,6 +10,11 @@ export type Etudiant = {
   email: string;
   biographie: string;
 };
+export type Choix = {
+  theme: string;
+  choix1: string;
+  choix2: string;
+};
 export type Enseignant = {
   id: number;
   username: string;
