@@ -25,22 +25,21 @@ const EtudiantDashboard = () => {
   const maitreMemoire = "Dr. Jane Doe";
   const memoireDepose = false;
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const response = await fetch('http://your-fastapi-url/api/user/1');
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des données utilisateur');
-        }
-        const data = await response.json();
-        setUserInfo(data);
-      } catch (error) {
-        console.error('Erreur:', error);
-      }
-    };
+  // useEffect(() => {
+    
+  //   const storedUserInfo = localStorage.getItem('userInfo');
+  //   if (storedUserInfo) {
+  //     const parsedUserInfo = JSON.parse(storedUserInfo);
+  //     console.log(parsedUserInfo);
+  //   }
+  //   const storedUserInfoString = localStorage.getItem('userInfo');
+  //   if (storedUserInfoString) {
+  //     const storedUserInfo = JSON.parse(storedUserInfoString);
+  //     setUserInfo(storedUserInfo);
+  //   }
+  // }, []);
 
-    fetchUserInfo();
-  }, []);
+  
 
   const renderContent = () => {
     switch (activeTab) {

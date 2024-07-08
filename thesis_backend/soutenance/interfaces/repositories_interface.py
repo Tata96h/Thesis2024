@@ -27,12 +27,16 @@ class ThesisRepositoriesInterface(ABC):
     ):
         pass
 
-    # @abstractmethod
-    # async def get_thesisa(self, thesis_slug: str):
-    #     pass
+    @abstractmethod
+    async def get_thesisa(self, thesis_slug: int):
+        pass
     
     @abstractmethod
     async def get_all_thesis_with_students(self, annee_id: int, limit: int, offset: int, db: AsyncSession):
+        pass
+
+    @abstractmethod
+    async def get_all_thesis_with_students_by_id(self, annee_id: int, utilisateur_id: int, limit: int, offset: int, db: AsyncSession):
         pass
 
     @abstractmethod

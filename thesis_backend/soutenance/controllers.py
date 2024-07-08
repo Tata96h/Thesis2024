@@ -61,12 +61,12 @@ async def update_thesis(
         updated_data, thesis_slug, utilisateur_id)
     return await presenter.update_thesis(**data)
 
-# @thesis_controllers.get(**response_data.get('thesisa'))
-# async def get_thesisa(
-#         thesis_slug: str,
-#         presenter: ThesisPresenter = Depends(get_presenter),
-# ):
-#     return await presenter.get_thesisa(thesis_slug=thesis_slug)
+@thesis_controllers.get(**response_data.get('thesisa'))
+async def get_thesisa(
+        thesis_slug: int,
+        presenter: ThesisPresenter = Depends(get_presenter),
+):
+    return await presenter.get_thesisa(thesis_slug=thesis_slug)
 
 
 
@@ -82,6 +82,22 @@ async def get_all_thesis_with_students(
     print(f"Controller: annee_id={annee_id}, limit={limit}, offset={offset}")
     try:
         theses_with_students = await presenter.get_all_thesis_with_students(annee_id, limit, offset, db)
+        return {'theses_with_students': theses_with_students}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@thesis_controllers.get(**response_data.get('memorant/by_id'))
+async def get_all_thesis_with_students_by_id(
+        annee_id: int,
+        utilisateur_id: int,
+        presenter: ThesisPresenter = Depends(get_presenter),
+        limit: int | None = 1000,
+        offset: int | None = 0,
+        db: AsyncSession = Depends(get_db_session)
+):
+    print(f"Controller: annee_id={annee_id},{utilisateur_id}, limit={limit}, offset={offset}")
+    try:
+        theses_with_students = await presenter.get_all_thesis_with_students_by_id(annee_id, utilisateur_id,limit, offset, db)
         return {'theses_with_students': theses_with_students}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

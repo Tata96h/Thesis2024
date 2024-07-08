@@ -27,30 +27,27 @@ export default async function ListeChoix({ searchParams }: paramsProps) {
 
   let choix: Choix[] = [];
   let totalUsers = 0;
-  let annee_id = 1;
-  // try {
-  //   const response = await fetch(
-  //     `http://127.0.0.1:8000/thesis/memorant/${annee_id}?offset=${offset}&limit=${pageLimit}`,
-  //     { cache: "no-store" }
-  //   );
+  let annee_id = 4;
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/thesis/memorant/${annee_id}?offset=${offset}&limit=${pageLimit}`,
+      { cache: "no-store" }
+    );
 
-  //   if (!response.ok) {
-  //     const errorData = await response.text();
-  //     console.error("Erreur lors de la récupération des choix:", errorData);
-  //     throw new Error("Erreur lors de la récupération des choix");
-  //   }
-  //   const ChoixRes = await response.json();
-  //   const choix = ChoixRes.theses_with_students;
-  //   // const etu = ChoixRes.theses_with_students.etudiants
-  //    console.log(choix);
-  //   // console.log(ChoixRes);
-  //   // console.log(etu);
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Erreur lors de la récupération des choix:", errorData);
+      throw new Error("Erreur lors de la récupération des choix");
+    }
+    const ChoixRes = await response.json();
+    const choix = ChoixRes.theses_with_students[0];
+     console.log(choix);
     
 
-  // } catch (error) {
-  //   console.error("Erreur lors de la récupération des choix:", error);
-  //   // Gérer l'erreur de manière appropriée (par exemple, afficher un message à l'utilisateur)
-  // }
+  } catch (error) {
+    console.error("Erreur lors de la récupération des choix:", error);
+    // Gérer l'erreur de manière appropriée (par exemple, afficher un message à l'utilisateur)
+  }
 
   const pageCount = Math.ceil(totalUsers / pageLimit);
 

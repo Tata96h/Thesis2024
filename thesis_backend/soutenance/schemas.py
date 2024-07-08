@@ -7,7 +7,7 @@ from users.profile.schemas import UserSchema
 
 
 class CreateThesisSchema(BaseModel):
-    numero: str
+    numero: Optional[int]
     theme: Optional[str] = Field(None, max_length=200)
     lieu_stage: Optional[str] = Field(None, max_length=200)
     responsable: Optional[str] = Field(None, max_length=200)
@@ -21,7 +21,6 @@ class CreateThesisSchema(BaseModel):
 
 
 class UpdateThesisSchema(BaseModel):
-    numero: str
     theme: Optional[str] = Field(None, max_length=200)
     lieu_stage: Optional[str] = Field(None, max_length=200)
     responsable: Optional[str] = Field(None, max_length=200)
@@ -37,7 +36,7 @@ class UpdateThesisSchema(BaseModel):
 class ThesisSchema(CreateThesisSchema):
     id: int
     owner_id: int
-    slug: str | None
+    slug: int | None
     created: datetime
     updated: datetime
 
@@ -45,8 +44,8 @@ class ThesisSchema(CreateThesisSchema):
         from_attributes = True
 
 class ChoixSchema(BaseModel):
-    numero: str
-    choix1_id: str
+    numero: int
+    choix1_id: int
     choix2_id: int
 
     class Config:

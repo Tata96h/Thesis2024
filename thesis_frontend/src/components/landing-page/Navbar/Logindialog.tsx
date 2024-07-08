@@ -6,8 +6,14 @@ import AlertMessage from '@/components/AlertMessage/page';
 
 
 const Login = () => {
-   const router = useRouter();
-const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const [treatment, setTreatment] = useState(false);
+  const [message, setMessage] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error" | undefined>(undefined); 
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem("isload", "0");
@@ -18,20 +24,9 @@ const [showPassword, setShowPassword] = useState(false);
     }
   }, [router]);
 
-  localStorage.setItem("isload", "0");
-  const session = localStorage.getItem("sessionIsActive");
-
-  const [treatment, setTreatement] = useState(false);
-  const [message, setMessage] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error" | undefined>(undefined); 
-
-
   const handleLogin = async (e) => {
     e.preventDefault();
-    setTreatement(true);
+    setTreatment(true);
     setMessageType("success");
     setMessage("Traitement...");
 
@@ -41,11 +36,9 @@ const [showPassword, setShowPassword] = useState(false);
       return;
     }
 
-    const formData = {
-      username: username,
-      password: password,
-    };
-     console.log(JSON.stringify(formData))
+    const formData = { username, password };
+    console.log(JSON.stringify(formData));
+
     try {
       const response = await fetch("http://127.0.0.1:8000/auth/login", {
         method: "POST",
@@ -56,46 +49,92 @@ const [showPassword, setShowPassword] = useState(false);
 
       const responseData = await response.json();
       console.log(responseData);
-       console.log(JSON.stringify(responseData))
+      console.log(JSON.stringify(responseData));
 
       if (response.ok) {
         localStorage.setItem("accessToken", responseData.access_token);
         localStorage.setItem("tokenType", responseData.token_type);
-        localStorage.setItem(
-          "userInfo",
-          JSON.stringify(responseData.user_info)
-        );
-        
+        localStorage.setItem("userInfo", JSON.stringify(responseData.user_info));
         localStorage.setItem("sessionIsActive", "1");
         console.log(localStorage);
-        
-        const userRole = responseData.user_info.role; 
-        console.log(userRole);
-        switch(userRole) {
-          case 1:
-            router.push("/etudiant");
-            break;
-          // case 2:
-          //   router.push("/teacher-dashboard");
-          //   break;
-          // case 3:
-          //   router.push("/student-dashboard");
-          //   break;
-          default:
-            router.push("/dashboard");
-            break;
+
+        // Fetch and set role label
+        const storedUserInfoString = localStorage.getItem('userInfo');
+        const storedUserInfo = JSON.parse(storedUserInfoString);
+        console.log(storedUserInfo);
+        console.log(storedUserInfo.role);
+
+        if (storedUserInfo) {
+          const fetchRoleLabel = async () => {
+            try {
+              const url = `http://127.0.0.1:8000/etudiants/get_role_by_id/?id=${storedUserInfo.role}`;
+              const response = await fetch(url, { method: 'GET' });
+
+              if (response.ok) {
+                const data = await response.json();
+                console.log('Données récupérées pour le rôle', storedUserInfo.role, data);
+
+                if (data && data.length > 0 && data[0].libelle) {
+                  const roleLabel = data[0].libelle;
+                  console.log('Libellé du rôle:', roleLabel);
+
+                  storedUserInfo.roleLabel = roleLabel;
+
+                  localStorage.setItem("userInfo", JSON.stringify(storedUserInfo));
+                  await redirectToRoleBasedRoute(roleLabel, storedUserInfo.utilisateur_id);
+                } else {
+                  console.error('Le champ libelle est manquant dans les données retournées:', data);
+                }
+              } else {
+                console.error('Erreur lors de la récupération du label du rôle :', response.status);
+              }
+            } catch (error) {
+              console.error('Erreur lors de la récupération du label du rôle :', error);
+            }
+          };
+          await fetchRoleLabel();
         }
-      // router.push("/dashboard");
       } else {
-        const errorData = await response.json();
-        setError(`Échec de la connexion : ${errorData.message || response.status}`);
+        setError(`Échec de la connexion : ${responseData.message || response.status}`);
       }
     } catch (error) {
-          setMessageType("error");
-          setMessage("Ces identifiants n'existent pas");
+      setMessageType("error");
+      setMessage("Ces identifiants n'existent pas");
     }
+    setTreatment(false);
   };
 
+  const redirectToRoleBasedRoute = async (roleLabel, utilisateurId) => {
+    if (roleLabel === 'Etudiant') {
+      try {
+        const url = `http://127.0.0.1:8000/thesis/memorant/4/${utilisateurId}?limit=1000&offset=0`;
+        
+        const response = await fetch(url, { method: 'GET' });
+
+        if (response.ok) {
+          const responseData = await response.json();
+        const bodyData = JSON.parse(responseData.theses_with_students.body);
+        const thesesWithStudents = bodyData.theses_with_students;
+        console.log('Données de l\'étudiant:', thesesWithStudents);
+          console.log(thesesWithStudents.length);
+          
+          if (thesesWithStudents.length === 0) {
+            router.push('/typEtudiant');
+          } else {
+            router.push('/etudiant');
+          }
+        } else {
+          console.error('Erreur lors de la récupération des données de l\'étudiant :', response.status);
+          router.push('/typEtudiant');
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données de l\'étudiant :', error);
+        router.push('/typEtudiant');
+      }
+    } else {
+      router.push('/dashboard');
+    }
+  };
  
 
   
@@ -135,34 +174,27 @@ const [showPassword, setShowPassword] = useState(false);
                   </div>
                 </div>
                 <div className="mt-8">
-  <label className="text-xs block mb-2">Password</label>
-  <div className="relative flex items-center">
-    <input
-      name="password"
-      type={showPassword ? "text" : "password"}
-      className="w-full text-sm border-b border-gray-300 focus:border-[#333] px-2 py-3 outline-none"
-      placeholder="Entrez votre mot de passe"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-    />
-    <button
-      type="button"
-      onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-2 cursor-pointer"
-    >
-      {showPassword ? (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-        </svg>
-      ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      )}
-    </button>
-  </div>
-</div>
+                  <label className="text-xs block mb-2">Password</label>
+                  <div className="relative flex items-center">
+                    <input
+                      name="password"
+                      type="password"
+                      className="w-full text-sm border-b border-gray-300 focus:border-[#333] px-2 py-3 outline-none"
+                      placeholder="Entrez votre mot de passe"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="#bbb"
+                      stroke="#bbb"
+                      className="w-[18px] h-[18px] absolute right-2 cursor-pointer"
+                      viewBox="0 0 128 128"
+                    >
+                      {/* SVG code */}
+                    </svg>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between gap-2 mt-5">
                   <div className="flex items-center">
                     <input
@@ -178,7 +210,7 @@ const [showPassword, setShowPassword] = useState(false);
                   <div>
                     <a
                       href="jajvascript:void(0);"
-                      className="text-blue-500 font-semibold text-sm hover:underline"
+                      className="text-blue-600 font-semibold text-sm hover:underline"
                     >
                       Mot de passe oublié?
                     </a>
@@ -187,7 +219,7 @@ const [showPassword, setShowPassword] = useState(false);
                 <div className="mt-12">
                   <button
                     type="submit"
-                    className="w-full shadow-xl py-2.5 px-4 text-sm font-semibold rounded-full text-white bg-blue-500 hover:bg-blue-700 focus:outline-none"
+                    className="w-full shadow-xl py-2.5 px-4 text-sm font-semibold rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
                   >
                     Valider
                   </button>

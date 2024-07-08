@@ -5,18 +5,64 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
+
 export default function StudentForm() {
   const [formType, setFormType] = useState('');
+  const [matricule, setMatricule] = useState('');
   const [matricule1, setMatricule1] = useState('');
   const [matricule2, setMatricule2] = useState('');
   const [year, setYear] = useState('');
   const [error, setError] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
   const router = useRouter();
-const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [anneeOptions, setAnneeOptions] = useState([]);
 
   useEffect(() => {
     setMounted(true);
+    const storedUserInfo = localStorage.getItem('userInfo');
+    if (storedUserInfo) {
+      const parsedUserInfo = JSON.parse(storedUserInfo);
+      console.log(parsedUserInfo);
+    }
+    const storedUserInfoString = localStorage.getItem('userInfo');
+    if (storedUserInfoString) {
+      const storedUserInfo = JSON.parse(storedUserInfoString);
+      setUserInfo(storedUserInfo);
+    }
   }, []);
+
+  useEffect(() => {
+    const fetchAnneeOptions = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/thesis/get_annees/?limit=1000&offset=0"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log(data); // Vérifiez les données reçues dans la console
+  
+          // Correction ici : utiliser 'data' au lieu de 'annees'
+          setAnneeOptions(
+            data.map((annee) => ({
+              value: annee.id,
+              label: annee.libelle,
+            }))
+          );
+        } else {
+          console.error(
+            "Erreur lors de la récupération des années :",
+            response.status
+          );
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des années :", error);
+      }
+    };
+    fetchAnneeOptions();
+  
+  }, []);
+
 
   const titleVariants = {
     hidden: { opacity: 0, x: -100 },
@@ -30,24 +76,42 @@ const [mounted, setMounted] = useState(false);
       }
     }
   };
+
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    const response = await fetch('/api/verify-student', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ formType, matricule1, matricule2, year }),
+  
+    const baseUrl = 'http://127.0.0.1:8000/thesis/';
+    const queryParams = new URLSearchParams({
+      matricules: `${matricule1}${formType === 'binome' ? ',' + matricule2 : ''}`,
+      utilisateur_id: userInfo ? userInfo.utilisateur_id : '',
     });
-
-    const data = await response.json();
-
-    if (data.success) {
-      router.push('/student-space');
-    } else {
-      setError(data.message);
+  
+    const url = `${baseUrl}?${queryParams.toString()}`;
+  
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formType, matricule1, matricule2, year }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log('Formulaire soumis avec succès:', data);
+        router.push('/etudiant'); // Redirection vers /etudiant après soumission réussie
+      } else {
+        setError(data.message || 'Une erreur est survenue lors de la soumission du formulaire.');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la soumission du formulaire:', error);
+      // setError('Une erreur s\'est produite lors de la soumission du formulaire.');
     }
   };
+  
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -65,18 +129,17 @@ const [mounted, setMounted] = useState(false);
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-md w-full space-y-8 bg-white bg-opacity-90 p-10 rounded-xl shadow-lg">
+        <div className="max-w-md w-full space-y-8 bg-white bg-opacity-90 p-10 rounded-xl shadow-lg">
           <motion.h1 
             className="text-3xl font-extrabold text-center text-gray-900 mb-6"
             initial="hidden"
             animate={mounted ? "visible" : "hidden"}
             variants={titleVariants}
           >
-            Bienvenu(e)
+            Bienvenu(e) {userInfo ? `${userInfo.nom} ${userInfo.prenoms}` : ''}
           </motion.h1>
           <h5 className="text-center text-gray-100 mb-6">Vous êtes en </h5>
 
-          
           {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -163,23 +226,28 @@ const [mounted, setMounted] = useState(false);
                   </div>
                 )}
 
-                <div>
+<div>
                   <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
                     Année académique
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="year"
                     value={year}
                     onChange={(e) => setYear(e.target.value)}
                     className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Ex: 2023-2024"
                     required
-                  />
+                  >
+                    <option value="">Sélectionner une année académique</option>
+                    {anneeOptions.map((annee) => (
+                      <option key={annee.value} value={annee.value}>
+                        {annee.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
-
+           
             <div>
               <button
                 type="submit"

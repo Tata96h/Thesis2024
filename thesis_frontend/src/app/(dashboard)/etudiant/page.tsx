@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import {useEffect, useState } from "react";
 import Head from "next/head";
 import { Label } from "@radix-ui/react-label";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,79 @@ import ChoixMaitreMemoire from "@/components/memory/page";
 import DepotMemoire from "../users/forms/create/memory/page";
 
 export default function StudentSpace() {
+
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [memoireInfo, setMemoireInfo] = useState<any>(null);
+ 
+  useEffect(() => {
+    const storedUserInfo = localStorage.getItem('userInfo');
+    const storedMemoireInfo = localStorage.getItem('memoireInfo');
+    if (storedUserInfo) {
+      const parsedUserInfo = JSON.parse(storedUserInfo);
+
+      if (storedMemoireInfo) {
+        const parsedMemoireInfo = JSON.parse(storedMemoireInfo);
+        
+        // setMemoireInfo(parsedMemoireInfo);
+      }
+  
+      // Fonction pour récupérer le label du rôle depuis l'API backend
+      const fetchRoleLabel = async () => {
+        try {
+          const url = `http://127.0.0.1:8000/etudiants/get_role_by_id/?id=${parsedUserInfo.role}`;  // URL dynamique avec parsedUserInfo.role
+          const response = await fetch(url, {
+            method: 'GET',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Données récupérées pour le rôle', parsedUserInfo.role, data);
+  
+            // Vérifiez que data est un tableau et contient des éléments
+            if (data && data.length > 0 && data[0].libelle) {
+              const roleLabel = data[0].libelle;  // Accéder au premier élément du tableau
+              console.log('Libellé du rôle:', roleLabel);
+              
+              // Mettre à jour parsedUserInfo avec le label du rôle
+              parsedUserInfo.roleLabel = roleLabel;
+              console.log('Mise à jour de parsedUserInfo:', parsedUserInfo);
+              
+              setUserInfo(parsedUserInfo);
+            } else {
+              console.error('Le champ libelle est manquant dans les données retournées:', data);
+            }
+            
+            // Exemple pour la récupération des données de l'enseignant (à adapter selon votre API)
+            if (parsedUserInfo.utilisateur_id && parsedUserInfo.roleLabel === 'Etudiant') {
+              const urlMemoire = `http://127.0.0.1:8000/thesis/memorant/4/${parsedUserInfo.utilisateur_id}?limit=1000&offset=0`;
+              const responseMemoire = await fetch(urlMemoire, {
+                method: 'GET',
+              });
+              if (responseMemoire.ok) {
+                const dataMemoire = await responseMemoire.json();
+                console.log('Memoire récupérées pour utilisateur', parsedUserInfo.utilisateur_id, dataMemoire);
+                localStorage.setItem("memoireInfo", JSON.stringify(dataMemoire));
+                console.log(localStorage);
+                const responseBody = JSON.parse(dataMemoire.theses_with_students.body);
+                const thesis = responseBody.theses_with_students[0];
+                setMemoireInfo(thesis);
+
+                
+              } else {
+                console.error('Erreur lors de la récupération des informations de memoire :', responseMemoire.status);
+              }
+            }
+          } else {
+            console.error('Erreur lors de la récupération du label du rôle :', response.status);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la récupération du label du rôle :', error);
+        }
+      };
+      
+      fetchRoleLabel();
+    }
+  }, []);
+
   const [activeTab, setActiveTab] = useState("tableau de bord");
   const [file, setFile] = useState(null);
   const [theme, setTheme] = useState("");
@@ -85,11 +158,20 @@ export default function StudentSpace() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-blue-100 p-4 rounded-lg">
                 <h4 className="font-bold text-lg mb-2">Statut du mémoire</h4>
-                <p>{profile.thesisStatus}</p>
+                <p>
+                {memoireInfo
+                    ? (memoireInfo.validation ? "Validé" : "En attente de validation")
+                    : "Non disponible"}
+
+                </p>
               </div>
               <div className="bg-green-100 p-4 rounded-lg">
                 <h4 className="font-bold text-lg mb-2">Maître-mémoire</h4>
-                <p>{profile.chefmemoryStatus}</p>
+                <p>
+                  {memoireInfo && memoireInfo.maitre_memoire.nom
+                    ? `${memoireInfo.maitre_memoire.nom} ${memoireInfo.maitre_memoire.prenom}`
+                    : "Non assigné"}
+                </p>
               </div>
             </div>
           </div>

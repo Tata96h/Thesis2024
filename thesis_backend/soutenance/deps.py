@@ -69,6 +69,10 @@ response_data = {
     },
     'memorant': {
         'path': '/memorant/{annee_id}',
+        'status_code': status.HTTP_200_OK,    
+    },
+    'memorant/by_id': {
+        'path': '/memorant/{annee_id}/{utilisateur_id}',
         'status_code': status.HTTP_200_OK,
         
     },
@@ -82,7 +86,6 @@ response_data = {
         'status_code': status.HTTP_200_OK,
         
     },
-    
 
     'create_thesis': {
         'path': '/',
@@ -92,11 +95,11 @@ response_data = {
         'path': '/{thesis_slug}',
         'status_code': status.HTTP_200_OK,
     },
-    # 'thesisa': {
-    #     'path': '/{thesis_slug}',
-    #     'status_code': status.HTTP_200_OK,
-    #     'response_model': ThesisSchema
-    # },
+    'thesisa': {
+        'path': '/thesis/{thesis_slug}',
+        'status_code': status.HTTP_200_OK,
+        'response_model': ThesisSchema
+    },
     'assign_choices': {
         'path': '/choice/{annee_id}/{department_id}',
         'status_code': status.HTTP_200_OK,

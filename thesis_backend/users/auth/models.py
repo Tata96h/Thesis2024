@@ -206,8 +206,8 @@ class Thesis(Base):
     __mapper_args__ = {'eager_defaults': True}
 
     id = Column(Integer, primary_key=True)
-    numero = Column(String(length=200), unique=True, nullable=False)
-    slug = Column(String)
+    numero = Column(Integer, unique=True, nullable=False)
+    slug = Column(Integer)
     theme = Column(String(length=200), nullable=True)
     fichier = Column(String(length=200), nullable=True)
     lieu_stage = Column(String(length=200), nullable=True)

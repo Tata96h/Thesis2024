@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, AsyncResult
 from sqlalchemy import select, insert, delete, update, and_
 from sqlalchemy.orm import subqueryload, aliased
 from sqlalchemy.orm.exc import NoResultFound
-
+import string,random
 from users.auth.models import Annee, Departement, Enseignant, Etudiant, Filiere, Jury, Planification, Salle, Users
 from users.etudiants.schemas import CreateEtudiantSchema
 from .schemas import CreateThesisSchema, CreateThesisSchema, UpdateThesisSchema
@@ -17,6 +17,9 @@ from .exceptions import ThesisExceptions
 from .interfaces.repositories_interface import \
     ThesisRepositoriesInterface
 from sqlalchemy import exists
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+
 
 @dataclass
 class ThesisRepositories(ThesisRepositoriesInterface):
@@ -85,34 +88,62 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             print(f"Erreur lors de l'exécution de la requête : {e}")
             raise HTTPException(status_code=500, detail="Erreur interne du serveur")
 
+    async def generate_unique_numero(self):
+        print("Génération d'un numero unique...")
+        first_digit = random.choice(string.digits[1:])  # Choisit un chiffre de 1 à 9
+        rest_digits = ''.join(random.choices(string.digits, k=3))
+        numero = int(first_digit + rest_digits)  # Convertir en entier
+        print(f"Matricule généré: {numero}")
+        return numero
 
+    async def get_thesisa(self, thesis_slug: int):
+        stmt = select(Thesis).where(Thesis.slug == thesis_slug)
+        result: AsyncResult = await self.session.execute(statement=stmt)
+        return result.scalars().first()
 
-    async def create_thesis(self, utilisateur_id: int, thesis_data: CreateThesisSchema, matricules: list, session: AsyncSession):
+    
+
+    async def create_thesis(self, utilisateur_id: int, thesis_data: CreateThesisSchema, matricules: List[str], session: AsyncSession):
         try:
+            # Générer un numéro unique
+            numero = await self.generate_unique_numero()
+            while await self.get_thesisa(numero):
+                print(f"Le numero {numero} existe déjà. Génération d'un nouveau numero...")
+                numero = await self.generate_unique_numero()
+            print(f"Numero unique généré: {numero}")
+
             # Récupérer le matricule de l'utilisateur
             utilisateur_matricule_stmt = select(Etudiant.matricule).where(Etudiant.utilisateur_id == utilisateur_id)
             utilisateur_matricule_result = await session.execute(utilisateur_matricule_stmt)
             utilisateur_matricule = utilisateur_matricule_result.scalar()
 
-            if not utilisateur_matricule:
+            # Vérifier que utilisateur_matricule est non nul et bien une chaîne
+            if utilisateur_matricule is None:
                 raise ValueError("Le matricule de l'utilisateur n'a pas été trouvé.")
+            utilisateur_matricule = str(utilisateur_matricule).strip()
+            print(f"Utilisateur matricule: '{utilisateur_matricule}' (type: {type(utilisateur_matricule)})")
+
+            # Normaliser la liste des matricules et les convertir en entier
+            matricules = [int(m) for m in matricules]
+            print(f"Matricules normalisés: {matricules} (types: {[type(m) for m in matricules]})")
 
             # Vérifier si le matricule de l'utilisateur est dans la liste des matricules envoyée par le front-end
-            if utilisateur_matricule not in matricules:
+            if int(utilisateur_matricule) not in matricules:
                 raise ValueError("Le matricule de l'utilisateur connecté n'est pas présent dans la liste des matricules fournie.")
 
             # Récupérer les IDs des utilisateurs pour chaque matricule
             etudiant_ids_stmt = select(Etudiant.utilisateur_id).where(Etudiant.matricule.in_(matricules))
             etudiant_ids_result = await session.execute(etudiant_ids_stmt)
             utilisateur_ids = [row[0] for row in etudiant_ids_result.fetchall()]
-            print(utilisateur_ids)
+            print(f"Utilisateur IDs: {utilisateur_ids} (types: {[type(uid) for uid in utilisateur_ids]})")
 
             if not utilisateur_ids:
                 raise ValueError("Un ou plusieurs matricules sont invalides.")
 
             # Créer la thèse
             values = {
-                'slug': thesis_data.numero, 
+                'numero': numero,
+                'slug': numero, 
                 **thesis_data.dict(exclude_unset=True)
             }
             print(values)
@@ -122,11 +153,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             thesis_id = result.scalar()
             print(f"Soutenance créée avec succès, ID: {thesis_id}")
 
-            # # Ajouter les owner_ids dans la table de jonction
-            # for owner_id in utilisateur_ids:
-            #     soutenance_owner_stmt = insert(ThesisOwners).values(soutenance_id=thesis_id, owner_id=owner_id)
-            #     await session.execute(soutenance_owner_stmt)
-
+            # Ajouter les owner_ids dans la table de jonction
             for utilisateur_id in utilisateur_ids:
                 thesis_annee_id_stmt = select(Thesis.annee_id).where(Thesis.id == thesis_id)
                 thesis_annee_id_result = await session.execute(thesis_annee_id_stmt)
@@ -152,8 +179,8 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             return thesis_id
 
         except Exception as e:
-            print(f"Une erreur s'est produite : {str(e)}")
             await session.rollback()
+            print(f"Une erreur s'est produite : {e}")
             raise e
 
 
@@ -181,10 +208,6 @@ class ThesisRepositories(ThesisRepositoriesInterface):
         await self.session.execute(statement=stmt)
         await self.session.commit()
     
-    # async def get_thesisa(self, thesis_slug: str):
-    #     stmt = select(Thesis).where(Thesis.slug == thesis_slug)
-    #     result: AsyncResult = await self.session.execute(statement=stmt)
-    #     return result.scalars().first()
     
     async def __check_thesis(self, thesis_slug: str):
         if not (thesis := await self.get_thesisa(thesis_slug=thesis_slug)):
@@ -210,7 +233,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             # Build the query with necessary joins
             stmt = (
                 select(
-                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
+                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.is_theme_valide, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
                     Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
                     choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
                     choix2_user.nom.label('choix2_nom'), choix2_user.prenoms.label('choix2_prenom'),
@@ -249,6 +272,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     thesis_dict[thesis_id] = {
                         'thesis_id': thesis_id,
                         'theme': row.theme,
+                        'validation': row.is_theme_valide,
                         'choix1': {
                             'id': row.choix1_id,
                             'nom': row.choix1_nom,
@@ -282,6 +306,101 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             print(f"An error occurred: {str(e)}")
             raise
         
+    
+
+    async def get_all_thesis_with_students_by_id(self, annee_id: int, utilisateur_id: int, limit: int, offset: int, db: AsyncSession):
+        print(f"Recherche de thèses pour annee_id: {annee_id}, utilisateur_id: {utilisateur_id}")
+
+        if not isinstance(annee_id, int):
+            raise ValueError(f"annee_id doit être un entier, reçu: {type(annee_id)}")
+
+        try:
+            # Alias pour les tables utilisateurs pour choix1, choix2 et maitre
+            choix1_user = aliased(Users)
+            choix2_user = aliased(Users)
+            maitre_user = aliased(Users)
+            choix1_enseignant = aliased(Enseignant)
+            choix2_enseignant = aliased(Enseignant)
+            maitre_enseignant = aliased(Enseignant)
+
+            # Construction de la requête avec les jointures nécessaires
+            stmt = (
+                select(
+                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.is_theme_valide, 
+                    Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
+                    Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
+                    choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
+                    choix2_user.nom.label('choix2_nom'), choix2_user.prenoms.label('choix2_prenom'),
+                    maitre_user.nom.label('maitre_nom'), maitre_user.prenoms.label('maitre_prenom')
+                )
+                .join(Appartenir, Thesis.id == Appartenir.soutenance_id)
+                .join(Users, Appartenir.utilisateur_id == Users.id)
+                .outerjoin(choix1_enseignant, Thesis.choix1_id == choix1_enseignant.id)
+                .outerjoin(choix1_user, choix1_enseignant.utilisateur_id == choix1_user.id)
+                .outerjoin(choix2_enseignant, Thesis.choix2_id == choix2_enseignant.id)
+                .outerjoin(choix2_user, choix2_enseignant.utilisateur_id == choix2_user.id)
+                .outerjoin(maitre_enseignant, Thesis.maitre_memoire_id == maitre_enseignant.id)
+                .outerjoin(maitre_user, maitre_enseignant.utilisateur_id == maitre_user.id)
+                .where(Thesis.annee_id == annee_id)
+                .limit(limit)
+                .offset(offset)
+            )
+
+            result = await db.execute(stmt)
+            all_results = result.all()
+            print(f"Nombre de résultats: {len(all_results)}")
+
+            if not all_results:
+                return JSONResponse(content={"theses_with_students": []})
+
+            thesis_dict = {}
+            for row in all_results:
+                thesis_id = row.thesis_id
+                if thesis_id not in thesis_dict:
+                    thesis_dict[thesis_id] = {
+                        'thesis_id': thesis_id,
+                        'theme': row.theme,
+                        'validation': row.is_theme_valide,
+                        'choix1': {
+                            'id': row.choix1_id,
+                            'nom': row.choix1_nom,
+                            'prenom': row.choix1_prenom
+                        },
+                        'choix2': {
+                            'id': row.choix2_id,
+                            'nom': row.choix2_nom,
+                            'prenom': row.choix2_prenom
+                        },
+                        'annee_id': row.annee_id,
+                        'maitre_memoire': {
+                            'id': row.maitre_memoire_id,
+                            'nom': row.maitre_nom,
+                            'prenom': row.maitre_prenom
+                        },
+                        'etudiants': []
+                    }
+                thesis_dict[thesis_id]['etudiants'].append({
+                    'etudiant_id': row.utilisateur_id,
+                    'nom': row.etudiant_nom,
+                    'prenom': row.etudiant_prenom
+                })
+
+            # Filtrer les thèses pour inclure uniquement celles où utilisateur_id est un des étudiants
+            filtered_theses = [
+                thesis for thesis in thesis_dict.values() 
+                if any(etudiant['etudiant_id'] == utilisateur_id for etudiant in thesis['etudiants'])
+            ]
+
+            result_json = {
+                "theses_with_students": filtered_theses
+            }
+
+            json_compatible_item_data = jsonable_encoder(result_json)
+            return JSONResponse(content=json_compatible_item_data)
+
+        except Exception as e:
+            print(f"Une erreur s'est produite: {str(e)}")
+            raise
 
 
     async def get_all_thesis_with_students_by_department(self, annee_id: int, department_id: int, limit: int, offset: int, db: AsyncSession):

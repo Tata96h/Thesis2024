@@ -41,6 +41,19 @@ class ThesisPresenter:
             print(f"Presenter: Error occurred: {str(e)}")
             raise
 
+    async def get_all_thesis_with_students_by_id(self, annee_id: int, utilisateur_id: int, limit: int, offset: int, db: AsyncSession):
+        print(f"Presenter: Entering function with annee_id={annee_id},{utilisateur_id} limit={limit}, offset={offset}")
+        print(f"Presenter: Repository instance: {self.repository}")
+        
+        try:
+            print("Presenter: Calling repository.get_all_thesis_with_students")
+            result = await self.repository.get_all_thesis_with_students_by_id(annee_id, utilisateur_id, limit, offset, db)
+            print(f"Presenter: Received result from repository: {result}")
+            return result
+        except Exception as e:
+            print(f"Presenter: Error occurred: {str(e)}")
+            raise
+
     async def get_all_thesis_with_students_by_department(self, annee_id: int,departement_id: int,  limit: int, offset: int, db: AsyncSession):
         print(f"Presenter: Entering function with annee_id={annee_id}, {departement_id} limit={limit}, offset={offset}")
         print(f"Presenter: Repository instance: {self.repository}")
@@ -77,11 +90,11 @@ class ThesisPresenter:
             .update_thesis(utilisateur_id=utilisateur_id, thesis_slug=thesis_slug,
                             updated_data=updated_data)
     
-    # async def get_thesisa(self, thesis_slug: str):
-    #     data = {'thesis_slug': thesis_slug}
-    #     if (result := await self.repository.get_thesisa(**data)) is None:
-    #         raise ThesisExceptions().thesis_not_found
-    #     return result
+    async def get_thesisa(self, thesis_slug: int):
+        data = {'thesis_slug': thesis_slug}
+        if (result := await self.repository.get_thesisa(**data)) is None:
+            raise ThesisExceptions().thesis_not_found
+        return result
     
 
     async def assign_choices(self, annee_id: int,department_id: int, db: AsyncSession):

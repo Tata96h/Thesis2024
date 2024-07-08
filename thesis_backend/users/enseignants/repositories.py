@@ -172,6 +172,8 @@ class EnseignantRepositories(EnseignantRepositoriesInterface):
         result = await self.session.execute(select(Departement))
         return result.scalars().all()
     
+    
+    
     async def get_grades(self):
         result = await self.session.execute(select(Grade))
         return result.scalars().all()

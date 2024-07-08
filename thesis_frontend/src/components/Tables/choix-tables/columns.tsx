@@ -23,21 +23,24 @@ export const columns: ColumnDef<Choi>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  {
-    
-    accessorKey: "hrtjnvf ",
+  { 
+    accessorKey: "choix1.nom",
+    header: "Thème",
+  },
+  { 
+    accessorKey: "choix1.nom",
     header: "Etudiant 1",
   },
   
   {
-    accessorKey: "bjgsfk",
+    accessorKey: "choix1.nom",
     header: "Etudiant 2",
   },
   {
-    accessorKey: "nynjjj",
+    accessorKey: "choix1.nom",
     header: "Choix 1",
   },{
-    accessorKey: "nyuh",
+    accessorKey: "choix1.nom",
     header: "Choix 2",
   },
   
