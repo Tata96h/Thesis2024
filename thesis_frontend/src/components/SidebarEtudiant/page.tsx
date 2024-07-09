@@ -33,6 +33,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
 
   useEffect(() => {
+    
     const storedUserInfo = localStorage.getItem('userInfo');
     const storedEtudiantInfo = localStorage.getItem('etudiantInfo');
     const storedMemoireInfo = localStorage.getItem('memoireInfo');
@@ -54,6 +55,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       
       // Fonction pour récupérer le label du rôle depuis l'API backend
       const fetchRoleLabel = async () => {
+       
         try {
           const url = `http://127.0.0.1:8000/etudiants/get_role_by_id/?id=${parsedUserInfo.role}`;  // URL dynamique avec parsedUserInfo.role
           const response = await fetch(url, {
@@ -88,7 +90,6 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 console.log('Données récupérées pour utilisateur', parsedUserInfo.utilisateur_id, dataEtudiant);
                 localStorage.setItem("etudiantInfo", JSON.stringify(dataEtudiant));
                 console.log(localStorage);
-                // setEtudiantInfo(parsedEtudiantInfo);
                 
               } else {
                 console.error('Erreur lors de la récupération des informations etudoant :', responseEtudiant.status);
@@ -107,7 +108,8 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     }
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = (e) => {
+    e.preventDefault();
     localStorage.setItem("sessionIsActive", "0");
     localStorage.removeItem('userInfo');
     localStorage.removeItem('etudiantInfo');
@@ -162,38 +164,45 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <p className="mb-1 text-sm text-white/60">
                 {etudiantInfo ? `${etudiantInfo.filiere.nom}` : "Null"}
               </p>
-              {parsedMemoireInfo && parsedMemoireInfo.body ? (
-  (() => {
-    try {
-      const thesesData = JSON.parse(parsedMemoireInfo.body);
-      console.log("Parsed thesesData:", thesesData);
-      
-      if (!thesesData.theses_with_students || thesesData.theses_with_students.length === 0) {
-        return <div>Pas de thèses avec étudiants</div>;
-      }
-      
-      const etudiants = thesesData.theses_with_students[0].etudiants;
-      console.log(etudiants);
-      
-      if (!etudiants || etudiants.length !== 2) {
-        return <div>Nombre incorrect d'étudiants</div>;
-      }
-      
-      return (
-        <div className="mb-1 text-sm text-white/60">
-          Binôme: 
-          {etudiants[0].nom} {etudiants[0].prenom}, 
-          {etudiants[1].nom} {etudiants[1].prenom}
-        </div>
-      );
-    } catch (error) {
-      console.error("Error parsing memoireInfo:", error);
-      return <div>Erreur lors du parsing des données</div>;
-    }
-  })()
-) : (
-  <div>Pas d'informations sur le mémoire</div>
-)}
+              {parsedMemoireInfo && userInfo ? (
+            (() => {
+              try {
+                if (!parsedMemoireInfo || parsedMemoireInfo.length === 0) {
+                  return <div>Pas de thèses avec étudiants</div>;
+                }
+
+                const etudiants = parsedMemoireInfo.etudiants;
+                console.log(etudiants);
+
+                if (!etudiants || etudiants.length !== 2) {
+                  return <div>Nombre incorrect d'étudiants</div>;
+                }
+
+                // Trouver l'étudiant dont le nom et prénom sont différents de userInfo.nom et userInfo.prenom
+                const autreEtudiant = etudiants.find(etudiant => (
+                  etudiant.nom !== userInfo.nom || etudiant.prenom !== userInfo.prenom
+                ));
+
+                if (!autreEtudiant) {
+                  return <div>Impossible de trouver un étudiant différent</div>;
+                }
+
+                return (
+                  <div className="mb-1 text-sm text-white/60">
+                    Binôme: {autreEtudiant.nom} {autreEtudiant.prenom}
+                  </div>
+                );
+              } catch (error) {
+                console.error("Error parsing memoireInfo:", error);
+                return <div>Erreur lors du parsing des données</div>;
+              }
+            })()
+          ) : (
+            <div> </div>
+          )}
+
+
+
               {userInfo && (
                 <>
                   <p className="mb-1 text-sm text-white/60">{userInfo.grade}</p>

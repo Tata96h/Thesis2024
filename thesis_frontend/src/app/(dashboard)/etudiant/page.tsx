@@ -23,7 +23,7 @@ export default function StudentSpace() {
 
       if (storedMemoireInfo) {
         const parsedMemoireInfo = JSON.parse(storedMemoireInfo);
-        
+      
         // setMemoireInfo(parsedMemoireInfo);
       }
   
@@ -61,12 +61,12 @@ export default function StudentSpace() {
               if (responseMemoire.ok) {
                 const dataMemoire = await responseMemoire.json();
                 console.log('Memoire récupérées pour utilisateur', parsedUserInfo.utilisateur_id, dataMemoire);
-                localStorage.setItem("memoireInfo", JSON.stringify(dataMemoire));
+                
                 console.log(localStorage);
                 const responseBody = JSON.parse(dataMemoire.theses_with_students.body);
                 const thesis = responseBody.theses_with_students[0];
                 setMemoireInfo(thesis);
-
+                localStorage.setItem("memoireInfo", JSON.stringify(thesis));
                 
               } else {
                 console.error('Erreur lors de la récupération des informations de memoire :', responseMemoire.status);

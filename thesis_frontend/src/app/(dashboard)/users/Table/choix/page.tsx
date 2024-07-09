@@ -1,7 +1,7 @@
 // "use client";
 
 import DefaultLayout from '@/components/Layouts/DefaultLayout';
-
+// import { useEffect, useState } from "react";
 import { Choix } from "@/types/user";
 import { columns } from "@/components/Tables/choix-tables/columns";
 import { ChoixTable } from "@/components/Tables/choix-tables/choix-tables";
@@ -18,7 +18,19 @@ type paramsProps = {
     [key: string]: string | string[] | undefined;
   };
 };
+// const [showDashboard, setShowDashboard] = useState(false);
 
+  // useEffect(() => {
+  //   const storedUserInfo = localStorage.getItem('userInfo');
+  //   const storedMemoireInfo = localStorage.getItem('memoireInfo');
+  //   if (storedUserInfo) {
+  //     const parsedUserInfo = JSON.parse(storedUserInfo);
+
+  //     if (storedMemoireInfo) {
+  //       const parsedMemoireInfo = JSON.parse(storedMemoireInfo);
+        
+  //       // setMemoireInfo(parsedMemoireInfo);
+  //     }}},[])
 // eslint-disable-next-line @next/next/no-async-client-component
 export default async function ListeChoix({ searchParams }: paramsProps) {
   const page = Number(searchParams.page) || 1;
@@ -28,9 +40,9 @@ export default async function ListeChoix({ searchParams }: paramsProps) {
   let choix: Choix[] = [];
   let totalUsers = 0;
   let annee_id = 4;
+  
   try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/thesis/memorant/${annee_id}?offset=${offset}&limit=${pageLimit}`,
+    const response = await fetch(`http://127.0.0.1:8000/thesis/memorant_by_dep/${annee_id}/{departement}?departement_id=1&limit=10&offset=0`,
       { cache: "no-store" }
     );
 
@@ -39,10 +51,11 @@ export default async function ListeChoix({ searchParams }: paramsProps) {
       console.error("Erreur lors de la récupération des choix:", errorData);
       throw new Error("Erreur lors de la récupération des choix");
     }
-    const ChoixRes = await response.json();
-    const choix = ChoixRes.theses_with_students[0];
-     console.log(choix);
-    
+    const choixRes = await response.json();
+
+    const responseBody = JSON.parse(choixRes.theses_with_students);
+    const choix = responseBody.theses_with_students[0];
+    console.log(choix);
 
   } catch (error) {
     console.error("Erreur lors de la récupération des choix:", error);
@@ -56,7 +69,7 @@ export default async function ListeChoix({ searchParams }: paramsProps) {
       <div className="flex flex-col gap-9 mt-20">
         <div className="flex items-start justify-between">
           {/* <Heading
-            title={`Etudiants (${totalUsers})`}
+            title={Etudiants (${totalUsers})}
             description="Nos étudiants"
           /> */}
           <Link

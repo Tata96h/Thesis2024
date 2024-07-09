@@ -76,8 +76,8 @@ response_data = {
         'status_code': status.HTTP_200_OK,
         
     },
-    'memorant/departement': {
-    'path': '/memorant/{annee_id}/{departement}',
+    'memorant/by_departement': {
+    'path': '/memorant_by_dep/{annee_id}/{departement}',
     'status_code': status.HTTP_200_OK,
         
     },
@@ -101,12 +101,12 @@ response_data = {
         'response_model': ThesisSchema
     },
     'assign_choices': {
-        'path': '/choice/{annee_id}/{department_id}',
+        'path': '/choice/{annee_id}/{departement_id}',
         'status_code': status.HTTP_200_OK,
         'response_model': AssignChoicesSchema
     },
     'planification': {
-        'path': '/planification/{annee_id}/{department_id}',
+        'path': '/planification/{annee_id}/{departement_id}',
         'status_code': status.HTTP_200_OK,
         # 'response_model': AssignChoicesSchema
     },

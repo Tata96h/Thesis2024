@@ -24,7 +24,7 @@ export const columns: ColumnDef<Choi>[] = [
     enableHiding: false,
   },
   { 
-    accessorKey: "choix1.nom",
+    accessorKey: "theme",
     header: "Thème",
   },
   { 
@@ -33,14 +33,14 @@ export const columns: ColumnDef<Choi>[] = [
   },
   
   {
-    accessorKey: "choix1.nom",
+    accessorKey: "choix2.nom",
     header: "Etudiant 2",
   },
   {
-    accessorKey: "choix1.nom",
+    accessorKey: "etudiants[0].nom",
     header: "Choix 1",
   },{
-    accessorKey: "choix1.nom",
+    accessorKey: "etudiants[0].nom",
     header: "Choix 2",
   },
   

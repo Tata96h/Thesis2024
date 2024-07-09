@@ -4,64 +4,82 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { log } from 'console';
 
 
 export default function StudentForm() {
   const [formType, setFormType] = useState('');
   const [matricule, setMatricule] = useState('');
   const [matricule1, setMatricule1] = useState('');
-  const [matricule2, setMatricule2] = useState('');
-  const [year, setYear] = useState('');
   const [error, setError] = useState('');
   const [userInfo, setUserInfo] = useState(null);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [anneeOptions, setAnneeOptions] = useState([]);
+  const [parsedUserInfo, setParsedUserInfo] = useState([]);
 
   useEffect(() => {
     setMounted(true);
+    // const storedUserInfo = localStorage.getItem('userInfo');
+    // if (storedUserInfo) {
+    //   const parsedUserInfo = JSON.parse(storedUserInfo);
+    //   console.log(parsedUserInfo);
+    // }
     const storedUserInfo = localStorage.getItem('userInfo');
     if (storedUserInfo) {
       const parsedUserInfo = JSON.parse(storedUserInfo);
-      console.log(parsedUserInfo);
-    }
-    const storedUserInfoString = localStorage.getItem('userInfo');
-    if (storedUserInfoString) {
-      const storedUserInfo = JSON.parse(storedUserInfoString);
-      setUserInfo(storedUserInfo);
-    }
-  }, []);
+       setUserInfo(parsedUserInfo);
+    
 
-  useEffect(() => {
-    const fetchAnneeOptions = async () => {
+    const fetchRoleLabel = async () => {
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/thesis/get_annees/?limit=1000&offset=0"
-        );
+        const url = `http://127.0.0.1:8000/etudiants/get_role_by_id/?id=${parsedUserInfo.role}`;  // URL dynamique avec parsedUserInfo.role
+        const response = await fetch(url, {
+          method: 'GET',
+        });
         if (response.ok) {
           const data = await response.json();
-          console.log(data); // Vérifiez les données reçues dans la console
-  
-          // Correction ici : utiliser 'data' au lieu de 'annees'
-          setAnneeOptions(
-            data.map((annee) => ({
-              value: annee.id,
-              label: annee.libelle,
-            }))
-          );
+          console.log('Données récupérées pour le rôle', parsedUserInfo.role, data);
+
+          // Vérifiez que data est un tableau et contient des éléments
+          if (data && data.length > 0 && data[0].libelle) {
+            const roleLabel = data[0].libelle;  // Accéder au premier élément du tableau
+            console.log('Libellé du rôle:', roleLabel);
+            
+            // Mettre à jour parsedUserInfo avec le label du rôle
+            parsedUserInfo.roleLabel = roleLabel;
+            // console.log('Mise à jour de parsedUserInfo:', parsedUserInfo);
+            
+            // setUserInfo(parsedUserInfo);
+          } else {
+            console.error('Le champ libelle est manquant dans les données retournées:', data);
+          }
+          
+          // Exemple pour la récupération des données de l'enseignant (à adapter selon votre API)
+          if (parsedUserInfo.utilisateur_id && parsedUserInfo.roleLabel === 'Etudiant') {
+            const urlMatricule = `http://127.0.0.1:8000/etudiants/${parsedUserInfo.utilisateur_id}`;
+            const responseMatricule = await fetch(urlMatricule, {
+              method: 'GET',
+            });
+            if (responseMatricule.ok) {
+              const dataMemoire = await responseMatricule.json();
+              setMatricule(dataMemoire.matricule); 
+              
+              
+            } else {
+              console.error('Erreur lors de la récupération des informations de Memoire :', responseMatricule.status);
+            }
+          }
         } else {
-          console.error(
-            "Erreur lors de la récupération des années :",
-            response.status
-          );
+          console.error('Erreur lors de la récupération du label du rôle :', response.status);
         }
       } catch (error) {
-        console.error("Erreur lors de la récupération des années :", error);
+        console.error('Erreur lors de la récupération du label du rôle :', error);
       }
     };
-    fetchAnneeOptions();
-  
-  }, []);
+    
+    fetchRoleLabel();
+  }
+}, []);
 
 
   const titleVariants = {
@@ -82,20 +100,23 @@ export default function StudentForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+
   
     const baseUrl = 'http://127.0.0.1:8000/thesis/';
     const queryParams = new URLSearchParams({
-      matricules: `${matricule1}${formType === 'binome' ? ',' + matricule2 : ''}`,
+      matricules: `${matricule}${formType === 'binome' ? ',' + matricule1 : ''}`,
       utilisateur_id: userInfo ? userInfo.utilisateur_id : '',
     });
   
     const url = `${baseUrl}?${queryParams.toString()}`;
   
     try {
+      const year = 4;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formType, matricule1, matricule2, year }),
+        body: JSON.stringify({ formType, matricule, matricule1, year }),
       });
   
       const data = await response.json();
@@ -196,55 +217,29 @@ export default function StudentForm() {
               <div className="space-y-4 mt-6">
                 <div>
                   <label htmlFor="matricule1" className="block text-sm font-medium text-gray-700 mb-1">
-                    {formType === 'monome' ? 'Matricule' : 'Matricule 1'}
+                    {formType === 'monome' ? '' : ''}
                   </label>
-                  <input
-                    type="text"
-                    id="matricule1"
-                    value={matricule1}
-                    onChange={(e) => setMatricule1(e.target.value)}
-                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Entrez le matricule"
-                    required
-                  />
+                  
                 </div>
 
                 {formType === 'binome' && (
                   <div>
                     <label htmlFor="matricule2" className="block text-sm font-medium text-gray-700 mb-1">
-                      Matricule 2
+                      Matricule du binôme
                     </label>
                     <input
                       type="text"
                       id="matricule2"
-                      value={matricule2}
-                      onChange={(e) => setMatricule2(e.target.value)}
+                      value={matricule1}
+                      onChange={(e) => setMatricule1(e.target.value)}
                       className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                      placeholder="Entrez le second matricule"
+                      placeholder="Entrez le matricule du binome"
                       required
                     />
                   </div>
                 )}
 
-<div>
-                  <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
-                    Année académique
-                  </label>
-                  <select
-                    id="year"
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                    className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    required
-                  >
-                    <option value="">Sélectionner une année académique</option>
-                    {anneeOptions.map((annee) => (
-                      <option key={annee.value} value={annee.value}>
-                        {annee.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
               </div>
             )}
            

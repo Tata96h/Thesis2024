@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
+import json
 import random
 from typing import Dict, List, Optional
 from fastapi import HTTPException
@@ -11,7 +12,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import string,random
 from users.auth.models import Annee, Departement, Enseignant, Etudiant, Filiere, Jury, Planification, Salle, Users
 from users.etudiants.schemas import CreateEtudiantSchema
-from .schemas import CreateThesisSchema, CreateThesisSchema, UpdateThesisSchema
+from .schemas import CreateThesisSchema, CreateThesisSchema, PlanificationSchema, UpdateThesisSchema
 from users.auth.models import  Appartenir, Thesis
 from .exceptions import ThesisExceptions
 from .interfaces.repositories_interface import \
@@ -196,19 +197,22 @@ class ThesisRepositories(ThesisRepositoriesInterface):
         return etudiant_ids
     
     async def update_thesis(
-            self, utilisateur_id: int, thesis_slug: str,
-            updated_data: UpdateThesisSchema
+    self, utilisateur_id: int, thesis_slug: int,
+    updated_data: UpdateThesisSchema
     ):
         await self.__check_thesis(thesis_slug=thesis_slug)
         values = {**updated_data.dict(exclude_none=True)}
         if updated_data.numero:
             values.update({'slug': updated_data.numero})
-        cond = (Thesis.slug == thesis_slug, Thesis.owner_id == utilisateur_id)
-        stmt = update(Thesis).where(*cond).values(**values)
+        
+        stmt = (
+            update(Thesis)
+            .where(Thesis.slug == thesis_slug)
+            .values(**values)
+        )
         await self.session.execute(statement=stmt)
-        await self.session.commit()
-    
-    
+        await self.session.commit()    
+        
     async def __check_thesis(self, thesis_slug: str):
         if not (thesis := await self.get_thesisa(thesis_slug=thesis_slug)):
             raise ThesisExceptions().thesis_not_found
@@ -297,13 +301,21 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     'prenom': row.etudiant_prenom
                 })
 
-            if not thesis_dict:
-                raise Exception(f"No theses found after processing for annee_id: {annee_id}")
+            # Filtrer les thèses pour inclure uniquement celles où utilisateur_id est un des étudiants
+            filtered_theses = [
+                thesis for thesis in thesis_dict.values() 
+                if any(etudiant['etudiant_id']  for etudiant in thesis['etudiants'])
+            ]
 
-            return list(thesis_dict.values())
+            result_json = {
+                "theses_with_students": filtered_theses
+            }
+
+            json_compatible_item_data = jsonable_encoder(result_json)
+            return JSONResponse(content=json_compatible_item_data)
 
         except Exception as e:
-            print(f"An error occurred: {str(e)}")
+            print(f"Une erreur s'est produite: {str(e)}")
             raise
         
     
@@ -326,7 +338,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             # Construction de la requête avec les jointures nécessaires
             stmt = (
                 select(
-                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.is_theme_valide, 
+                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.is_theme_valide, Thesis.numero,
                     Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
                     Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
                     choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
@@ -360,6 +372,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     thesis_dict[thesis_id] = {
                         'thesis_id': thesis_id,
                         'theme': row.theme,
+                        'numero': row.numero,
                         'validation': row.is_theme_valide,
                         'choix1': {
                             'id': row.choix1_id,
@@ -403,12 +416,12 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             raise
 
 
-    async def get_all_thesis_with_students_by_department(self, annee_id: int, department_id: int, limit: int, offset: int, db: AsyncSession):
-        print("Entering get_all_thesis_with_students_by_department function")
-        print(f"Received annee_id: {annee_id}, department_id: {department_id}")
+    async def get_all_thesis_with_students_by_departement(self, annee_id: int, departement_id: int, limit: int, offset: int, db: AsyncSession):
+        print("Entering get_all_thesis_with_students_by_departement function")
+        print(f"Received annee_id: {annee_id}, departement_id: {departement_id}")
 
-        if not isinstance(annee_id, int) or not isinstance(department_id, int):
-            raise ValueError(f"annee_id and department_id must be integers, received: {type(annee_id)}, {type(department_id)}")
+        if not isinstance(annee_id, int) or not isinstance(departement_id, int):
+            raise ValueError(f"annee_id and departement_id must be integers, received: {type(annee_id)}, {type(departement_id)}")
 
         try:
             # Aliases for user tables for choice1, choice2 and maitre
@@ -443,7 +456,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                 .join(filiere_alias, etudiant_alias.filiere_id == filiere_alias.id)
                 .join(Departement, filiere_alias.departement_id == Departement.id)
                 .where(Thesis.annee_id == annee_id)
-                .where(Departement.id == department_id)
+                .where(Departement.id == departement_id)
                 .limit(limit)
                 .offset(offset)
             )
@@ -460,7 +473,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             print(f"Number of results: {len(all_results)}")
 
             if not all_results:
-                raise Exception(f"No results found for annee_id: {annee_id} and department_id: {department_id}")
+                raise Exception(f"No results found for annee_id: {annee_id} and departement_id: {departement_id}")
 
             for row in all_results:
                 thesis_id = row.thesis_id
@@ -492,10 +505,12 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     'prenom': row.etudiant_prenom
                 })
 
-            if not thesis_dict:
-                raise Exception(f"No theses found after processing for annee_id: {annee_id} and department_id: {department_id}")
+                if not thesis_dict:
+                    raise Exception(f"No theses found after processing for annee_id: {annee_id} and departement_id: {departement_id}")
 
-            return list(thesis_dict.values())
+            # Convert to JSON
+            json_result = json.dumps(list(thesis_dict.values()))
+            return json_result
 
         except Exception as e:
             print(f"An error occurred: {str(e)}")
@@ -600,19 +615,19 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
     
 
-    async def assign_choices(self, annee_id: int, department_id: int, db: AsyncSession) -> List[Dict[str, int]]:
-        print(f"Received annee_id: {annee_id}, department_id: {department_id}")
+    async def assign_choices(self, annee_id: int, departement_id: int, db: AsyncSession) -> List[Dict[str, int]]:
+        print(f"Received annee_id: {annee_id}, departement_id: {departement_id}")
         
-        if not isinstance(annee_id, int) or not isinstance(department_id, int):
-            raise ValueError(f"annee_id and department_id must be integers, received: {type(annee_id)}, {type(department_id)}")
+        if not isinstance(annee_id, int) or not isinstance(departement_id, int):
+            raise ValueError(f"annee_id and departement_id must be integers, received: {type(annee_id)}, {type(departement_id)}")
 
         try:
-            # 1. Utiliser get_all_thesis_with_students_by_department pour récupérer les thèses par département et année
-            theses_choices = await self.get_all_thesis_with_students_by_department(annee_id, department_id, limit=1000, offset=0, db=db)
+            # 1. Utiliser get_all_thesis_with_students_by_departement pour récupérer les thèses par département et année
+            theses_choices = await self.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit=1000, offset=0, db=db)
             print(theses_choices)
 
             if not theses_choices:
-                raise ValueError(f"Aucune soutenance trouvée avec des choix non attribués pour l'année {annee_id} et le département {department_id}.")
+                raise ValueError(f"Aucune soutenance trouvée avec des choix non attribués pour l'année {annee_id} et le département {departement_id}.")
 
             # 2. Récupérer la liste des enseignants disponibles
             stmt = select(Enseignant.id)
@@ -675,30 +690,43 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
     
 
-    async def get_planification(self, annee_id: int, departement_id: int, db: AsyncSession):
-        theses = await self.get_all_thesis_with_students_by_department(annee_id, departement_id, limit=1000, offset=0, db=db)
-        
-        rooms_stmt = select(Salle)
-        result = await db.execute(rooms_stmt)
-        rooms = result.scalars().all()
-        
-        jurys_stmt = (
-        select(Jury)
-        .outerjoin(Enseignant, Jury.president_id == Enseignant.id)
-        .where(Enseignant.departement_id == departement_id)
-        )
-        result = await db.execute(jurys_stmt)
-        jurys = result.scalars().all()
+    async def get_planification(self, annee_id: int, departement_id: int, plan_data: PlanificationSchema, db: AsyncSession):
+        try:
+            # Ensure annee_id and departement_id are used correctly
+            theses = await self.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit=1000, offset=0, db=db)
+            
+            # Fetch rooms and juries
+            rooms_stmt = select(Salle)
+            result = await db.execute(rooms_stmt)
+            rooms = result.scalars().all()
+            
+            jurys_stmt = (
+                select(Jury)
+                .outerjoin(Enseignant, Jury.president_id == Enseignant.id)
+                .where(Enseignant.departement_id == departement_id)
+            )
+            result = await db.execute(jurys_stmt)
+            jurys = result.scalars().all()
 
-        if len(rooms) == 0 or len(jurys) == 0:
-            raise Exception("Pas assez de ressources disponibles pour la planification.")
+            if len(rooms) == 0 or len(jurys) == 0:
+                raise Exception("Insufficient resources available for planning.")
 
-        start_date = datetime(2024, 9, 14).date()
+            # Use plan_data for scheduling
+            start_date = plan_data.date
+            start_time = plan_data.heure_debut
+            end_time = plan_data.heure_fin
 
-        planifications = await self.schedule_defenses(theses, rooms, jurys, start_date, annee_id, departement_id, db)
-        return planifications
+            # Schedule defenses
+            planifications = await self.schedule_defenses(theses, rooms, jurys, start_date, start_time, end_time, annee_id, departement_id, db)
+            return planifications
 
-    async def schedule_defenses(self, theses, rooms, jurys, start_date, annee_id: int, departement_id: int, db: AsyncSession):
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            raise
+
+
+
+    async def schedule_defenses(self, theses, rooms, jurys, start_date, start_time, end_time, annee_id: int, departement_id: int, db: AsyncSession):
         schedules = []
         time_slots = ['8h-9h', '9h-10h', '10h-11h', '11h-12h', '12h-13h', '15h-16h', '16h-17h', '17h-18h', '18h-19h']
         
@@ -741,7 +769,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     if not jury:
                         break  # Aucun jury disponible pour ce créneau
 
-                    # Collect student names and surnames
+                    # Collecter les noms des étudiants
                     etudiants = [f"{etudiant['prenom']} {etudiant['nom']}" for etudiant in thesis['etudiants']]
                     etudiant1 = etudiants[0] if len(etudiants) > 0 else None
                     etudiant2 = etudiants[1] if len(etudiants) > 1 else None
@@ -775,12 +803,9 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
         await db.commit()
         return schedules
-
-
-
     async def get_annees(self, limit: int, offset: int):
-        stmt = select(Annee) \
-            .limit(limit) \
-            .offset(offset)
-        result = await self.session.execute(stmt)
-        return result.scalars().all()
+            stmt = select(Annee) \
+                .limit(limit) \
+                .offset(offset)
+            result = await self.session.execute(stmt)
+            return result.scalars().all()

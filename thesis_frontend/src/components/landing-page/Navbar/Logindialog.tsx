@@ -15,15 +15,25 @@ const Login = () => {
   const [messageType, setMessageType] = useState<"success" | "error" | undefined>(undefined); 
 
   useEffect(() => {
+    const 
     if (typeof window !== 'undefined') {
       localStorage.setItem("isload", "0");
       const session = localStorage.getItem("sessionIsActive");
       if (session === "1") {
-        router.push('/dashboard');
+        if (userInfo && userInfo.role) {
+          if (userInfo.role === 'etudiant') {
+            router.push('/etudiant');
+          } else {
+            router.push('/dashboard');
+          }
+        } else {
+          // Gérer le cas où userInfo ou userInfo.role n'est pas défini
+          console.error('userInfo or userInfo.role is not defined');
+          router.push('/defaultPath'); // Rediriger vers une page par défaut ou afficher une erreur
+        }
       }
     }
-  }, [router]);
-
+  }, [router, userInfo]);
   const handleLogin = async (e) => {
     e.preventDefault();
     setTreatment(true);
@@ -116,6 +126,9 @@ const Login = () => {
         const bodyData = JSON.parse(responseData.theses_with_students.body);
         const thesesWithStudents = bodyData.theses_with_students;
         console.log('Données de l\'étudiant:', thesesWithStudents);
+        localStorage.setItem("memoireInfo", JSON.stringify(thesesWithStudents));
+        console.log(localStorage.getItem('memoireInfo'));
+        
           console.log(thesesWithStudents.length);
           
           if (thesesWithStudents.length === 0) {

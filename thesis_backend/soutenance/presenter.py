@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-from .schemas import AnneeSchema, CreateThesisSchema, UpdateThesisSchema
+from .schemas import AnneeSchema, CreateThesisSchema, PlanificationSchema, UpdateThesisSchema
 from .interfaces.repositories_interface import \
      ThesisRepositoriesInterface
     
@@ -54,13 +54,13 @@ class ThesisPresenter:
             print(f"Presenter: Error occurred: {str(e)}")
             raise
 
-    async def get_all_thesis_with_students_by_department(self, annee_id: int,departement_id: int,  limit: int, offset: int, db: AsyncSession):
-        print(f"Presenter: Entering function with annee_id={annee_id}, {departement_id} limit={limit}, offset={offset}")
+    async def get_all_thesis_with_students_by_departement(self, annee_id: int, departement_id: int,  limit: int, offset: int, db: AsyncSession):
+        print(f"Presenter: Entering function with annee_id={annee_id}, departement={departement_id} limit={limit}, offset={offset}")
         print(f"Presenter: Repository instance: {self.repository}")
         
         try:
             print("Presenter: Calling repository.get_all_thesis_with_students")
-            result = await self.repository.get_all_thesis_with_students_by_department(annee_id,departement_id, limit, offset, db)
+            result = await self.repository.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit, offset, db)
             print(f"Presenter: Received result from repository: {result}")
             return result
         except Exception as e:
@@ -81,7 +81,7 @@ class ThesisPresenter:
             raise
 
     async def update_thesis(
-            self, utilisateur_id: int, thesis_slug: str,
+            self, utilisateur_id: int, thesis_slug: int,
             updated_data: UpdateThesisSchema
     ):
         if updated_data.is_empty:
@@ -97,14 +97,13 @@ class ThesisPresenter:
         return result
     
 
-    async def assign_choices(self, annee_id: int,department_id: int, db: AsyncSession):
-        print(f"Presenter received annee_id: {annee_id} {department_id}")
-        return await self.repository.assign_choices(annee_id=annee_id,department_id=department_id, db=db)
+    async def assign_choices(self, annee_id: int,departement_id: int, db: AsyncSession):
+        print(f"Presenter received annee_id: {annee_id} {departement_id}")
+        return await self.repository.assign_choices(annee_id=annee_id,departement_id=departement_id, db=db)
     
-    async def get_planification(self, annee_id: int,department_id: int, db: AsyncSession):
-        planifications = await self.repository.get_planification(annee_id,department_id, db)
+    async def get_planification(self, annee_id: int, departement_id: int, plan_data: PlanificationSchema, db: AsyncSession):
+        planifications = await self.repository.get_planification(annee_id, departement_id, plan_data, db)
         return planifications
-
 
     async def get_annees(self, limit: int, offset: int) -> List[AnneeSchema]:
         annees = await self.repository.get_annees(limit, offset)

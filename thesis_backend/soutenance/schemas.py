@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, time, date
 
 # from users.etudiants.schemas import EtudiantSchema
 from users.profile.schemas import UserSchema
@@ -21,6 +21,7 @@ class CreateThesisSchema(BaseModel):
 
 
 class UpdateThesisSchema(BaseModel):
+    numero: Optional[int] 
     theme: Optional[str] = Field(None, max_length=200)
     lieu_stage: Optional[str] = Field(None, max_length=200)
     responsable: Optional[str] = Field(None, max_length=200)
@@ -85,3 +86,12 @@ class AnneeSchema(BaseModel):
 
         class Config:
             orm_mode = True
+
+
+class PlanificationSchema(BaseModel):
+    date: date
+    heure_debut:time
+    heure_fin: time
+
+    class Config:
+        orm_mode = True

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
-from ..schemas import CreateThesisSchema, UpdateThesisSchema
+from ..schemas import CreateThesisSchema, PlanificationSchema, UpdateThesisSchema
 from sqlalchemy.ext.asyncio import AsyncSession
 
 class ThesisRepositoriesInterface(ABC):
@@ -40,7 +40,7 @@ class ThesisRepositoriesInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_all_thesis_with_students_by_department(self, annee_id: int,departement_id, limit: int, offset: int, db: AsyncSession):
+    async def get_all_thesis_with_students_by_departement(self, annee_id: int,departement_id, limit: int, offset: int, db: AsyncSession):
         pass
 
     @abstractmethod
@@ -48,11 +48,11 @@ class ThesisRepositoriesInterface(ABC):
         pass
 
     @abstractmethod
-    async def assign_choices(self, annee_id: int,department_id: int,):
+    async def assign_choices(self, annee_id: int,departement_id: int,):
         pass
 
     @abstractmethod
-    async def get_planification(self, annee_id: int,department_id: int,):
+    async def get_planification(self, annee_id: int, plan_data: PlanificationSchema, departement_id: int,):
         pass
 
     @abstractmethod
