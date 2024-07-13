@@ -17,7 +17,6 @@ const AddEnseignant = () => {
   const [formData, setFormData] = useState({
     nom: "",
     prenoms: "",
-    matricule: "",
     grade_id: "",
     username: "",
     departement_id: "",
@@ -43,16 +42,7 @@ const AddEnseignant = () => {
     console.log(newPrenomValue);
   };
 
-  const handleMatriculeChange = (event) => {
-    const newMatriculeValue = event.target.value;
-
-    setFormData((prevState) => ({
-      ...prevState,
-      matricule: newMatriculeValue,
-    }));
-    console.log(newMatriculeValue);
-  };
-
+  
   
   const handleGradeChange = (event) => {
     const newGradeValue = event.target.value;
@@ -141,11 +131,11 @@ const AddEnseignant = () => {
    
 const handleSubmit = async (e) => {
   e.preventDefault();
-  const { nom, prenoms, matricule, grade_id, departement_id, username } = formData;
+  const { nom, prenoms, grade_id, departement_id, username } = formData;
 
   console.log(formData); 
 
-  if (!nom || !prenoms || !matricule || !grade_id || !departement_id || !username) {
+  if (!nom || !prenoms  || !grade_id || !departement_id || !username) {
     setMessageType('error');
     setMessage('Tous les champs sont obligatoires !!');
     return;
@@ -225,18 +215,7 @@ const handleSubmit = async (e) => {
                     />
                   </div>
                 </div>
-                <div className="mb-4.5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="w-full">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                      Matricule <span className="text-meta-1"></span>
-                    </label>
-                    <input
-                      placeholder="Entrez votre matricule"
-                      className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                      type="number"
-                      onChange={handleMatriculeChange}
-                    />
-                  </div>
+                <div className="mb-4.5 grid grid-cols-1 md:grid-cols gap-6">
                   <div className="w-full">
                     <label className="mb-3 block text-sm font-medium text-black dark:text-white">
                       Email

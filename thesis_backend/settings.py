@@ -21,14 +21,12 @@ class Settings(BaseSettings):
     postgres_port: int = 5432
 
     profile_image_folder: str = "./users/profile/images"
+    soutenance_file: str = "./soutenance/files"
 
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
     elastic_host: str = "localhost:9200"
-
-    # BASE_DIR: ClassVar[str] = _os.path.dirname(_os.path.abspath(__file__))
-    # PROFILE_IMAGE_FOLDER: ClassVar[str] = _os.path.join(BASE_DIR, 'profile', 'images')
 
 
     DB_URL: str

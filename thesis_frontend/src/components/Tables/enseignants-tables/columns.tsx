@@ -45,6 +45,10 @@ export const columns: ColumnDef<Enseignan>[] = [
     accessorKey: "utilisateur.username",
     header: "Email",
   },
+  {
+    accessorKey: "departement.nom",
+    header: "Département",
+  },
   
   {
     header: "Actions",

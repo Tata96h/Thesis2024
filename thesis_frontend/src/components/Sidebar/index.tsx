@@ -75,7 +75,10 @@ const links: { group: string; links: SidebarLink[] }[] = [
         ],
       },
       { label: 'Choix Maître memoire', icon: Calendar, href: '/users/Table/choix' },
-      { label: 'Calendar', icon: Calendar, href: '/calendar' },
+      { label: 'Maître memoire', icon: Calendar, href: '/users/Table/maitre' },
+      { label: 'Jurys', icon: Calendar, href: '/users/Table/jury' },
+      { label: 'Memoire', icon: Calendar, href: '/users/Table/memoire' },
+      // { label: 'Calendar', icon: Calendar, href: '/calendar' },
     ],
   },
   {
@@ -163,7 +166,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           <Image
             width={176}
             height={32}
-            src={'/images/logo/sm.png'}
+            src={'/images/Logo/sm.png'}
             alt='Logo'
             priority
           />

@@ -218,7 +218,7 @@ class Thesis(Base):
     choix1_id = Column(Integer, ForeignKey('enseignant.id', ondelete='CASCADE'), nullable=True)
     choix2_id = Column(Integer, ForeignKey('enseignant.id', ondelete='CASCADE'), nullable=True)
     maitre_memoire_id = Column(Integer, ForeignKey('enseignant.id', ondelete='CASCADE'), nullable=True)
-    annee_id = Column(Integer, ForeignKey('annee.id', ondelete='CASCADE'), nullable=True)
+    annee_id = Column(Integer, ForeignKey('annee.id', ondelete='CASCADE'),default=4, nullable=True)
     
     maitre_memoire = relationship('Enseignant', foreign_keys=[maitre_memoire_id], backref='soutenances_maitre_memoire')
     annee =  relationship('Annee', foreign_keys=[annee_id], backref='annee_id')

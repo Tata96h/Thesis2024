@@ -3,6 +3,7 @@ import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import AlertMessage from '@/components/AlertMessage/page';
+import { log } from "console";
 
 
 const Login = () => {
@@ -13,27 +14,35 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | undefined>(undefined); 
+  const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
-    const 
     if (typeof window !== 'undefined') {
       localStorage.setItem("isload", "0");
       const session = localStorage.getItem("sessionIsActive");
-      if (session === "1") {
-        if (userInfo && userInfo.role) {
-          if (userInfo.role === 'etudiant') {
-            router.push('/etudiant');
-          } else {
-            router.push('/dashboard');
-          }
+      const storedUserInfo = localStorage.getItem('userInfo');
+
+      if (storedUserInfo) {
+        setUserInfo(JSON.parse(storedUserInfo));
+      }
+
+      if (session === "1" && storedUserInfo) {
+        const parsedUserInfo = JSON.parse(storedUserInfo);
+        
+        
+        if (parsedUserInfo.roleLabel === 'etudiant') {
+          router.push('/etudiant');
         } else {
-          // Gérer le cas où userInfo ou userInfo.role n'est pas défini
-          console.error('userInfo or userInfo.role is not defined');
-          router.push('/defaultPath'); // Rediriger vers une page par défaut ou afficher une erreur
+          router.push('/dashboard');
         }
+      } else {
+        // Optionally handle case where session is not active or userInfo is not available
+        router.push('/login'); // Example redirect to login if session is not active
       }
     }
-  }, [router, userInfo]);
+  }, [router]);
+
+  
   const handleLogin = async (e) => {
     e.preventDefault();
     setTreatment(true);

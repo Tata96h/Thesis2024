@@ -113,6 +113,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     localStorage.setItem("sessionIsActive", "0");
     localStorage.removeItem('userInfo');
     localStorage.removeItem('etudiantInfo');
+    localStorage.removeItem('memoireInfo');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('tokenType');
     console.log(localStorage);
@@ -133,7 +134,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             <Image
               width={176}
               height={32}
-              src={"/images/logo/sm.png"}
+              src={"/images/Logo/sm.png"}
               alt="Logo"
               priority
             />
@@ -145,7 +146,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             <div className="mb-6 flex flex-col items-center">
               <div className="relative mb-4 h-28 w-28 rounded-full">
                 <Image
-                  src={userInfo?.profileImage || "/images/user/user-01.png"}
+                  src={"/images/user/users1.png"}
                   layout="fill"
                   objectFit="cover"
                   className="rounded-full"
@@ -175,7 +176,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 console.log(etudiants);
 
                 if (!etudiants || etudiants.length !== 2) {
-                  return <div>Nombre incorrect d'étudiants</div>;
+                  return <div> </div>;
                 }
 
                 // Trouver l'étudiant dont le nom et prénom sont différents de userInfo.nom et userInfo.prenom

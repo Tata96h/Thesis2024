@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
+
+from fastapi import UploadFile
 from ..schemas import CreateThesisSchema, PlanificationSchema, UpdateThesisSchema
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +11,7 @@ class ThesisRepositoriesInterface(ABC):
 
     @abstractmethod
     async def create_thesis(
-            self, matricules: list,  thesis_data: CreateThesisSchema):
+            self, matricules: list, thesis_data: CreateThesisSchema):
         pass
 
     @abstractmethod
@@ -22,7 +24,7 @@ class ThesisRepositoriesInterface(ABC):
     
     @abstractmethod
     async def update_thesis(
-            self, utlisateur_id: int, thesis_slug: str,
+            self, utlisateur_id: int, thesis_slug: str, fichier: UploadFile ,
             updated_data: UpdateThesisSchema
     ):
         pass

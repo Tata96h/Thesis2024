@@ -1,5 +1,6 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from 'react';
+import AlertMessage from '../AlertMessage/page';
 
 const ChoixMaitreMemoire = () => {
   const [choix, setChoix] = useState({
@@ -7,7 +8,8 @@ const ChoixMaitreMemoire = () => {
     choix1_id: null,
     choix2_id: null
   });
-  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<"success" | "error" | undefined>(undefined);
+  const [message, setMessage] = useState("");
   const [etudiantInfo, setEtudiantInfo] = useState<any>(null);
   const [memoireInfo, setMemoireInfo] = useState<any>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
@@ -72,38 +74,47 @@ const ChoixMaitreMemoire = () => {
     e.preventDefault();
 
     if (choix.choix1_id === choix.choix2_id) {
+      setMessageType("error");
       setMessage("Erreur : Veuillez choisir deux maîtres différents.");
     } else {
       try {
-        // Ensure `numero` is set before sending the request
+        // Assurez-vous que `numero` est défini avant d'envoyer la requête
         const updatedChoix = { ...choix, numero: memoireInfo.numero };
+        console.log(updatedChoix);
+
+        // Créez un objet FormData
+        const formData = new FormData();
+        formData.append('updated_data', JSON.stringify(updatedChoix));
 
         const response = await fetch(`http://127.0.0.1:8000/thesis/${memoireInfo.numero}?utilisateur_id=${userInfo.utilisateur_id}`, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedChoix),
+          body: formData,
         });
 
         if (response.ok) {
+          setMessageType("success");
           setMessage("Vos choix ont été enregistrés avec succès.");
           console.log("Choix enregistrés :", updatedChoix);
         } else {
-          setMessage("Erreur lors de l'enregistrement des choix.");
-          console.error("Erreur lors de l'enregistrement des choix :", response.status);
+          const errorData = await response.json();
+          setMessageType("error");
+          setMessage(`Erreur lors de l'enregistrement des choix: ${errorData.detail}`);
+          console.error("Erreur lors de l'enregistrement des choix :", errorData);
         }
       } catch (error) {
+        setMessageType("error");
         setMessage("Erreur lors de l'enregistrement des choix.");
         console.error("Erreur lors de l'enregistrement des choix :", error);
       }
     }
   };
 
+
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-xl">
       <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Choix des Maîtres de Mémoire</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
+      {message && <AlertMessage type={messageType || 'success'} message={message} />}
         <div>
           <label htmlFor="choix1_id" className="block text-sm font-medium text-gray-700 mb-2">
             Premier choix
@@ -151,11 +162,7 @@ const ChoixMaitreMemoire = () => {
           Soumettre mes choix
         </button>
       </form>
-      {message && (
-        <p className={`mt-4 text-center ${message.includes('Erreur') ? 'text-red-600' : 'text-green-600'}`}>
-          {message}
-        </p>
-      )}
+      
     </div>
   );
 };

@@ -1,5 +1,9 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
+
+from fastapi import UploadFile
+
+from file_service.interfaces.file_service_interface import FileServiceInterface
 from .schemas import AnneeSchema, CreateThesisSchema, PlanificationSchema, UpdateThesisSchema
 from .interfaces.repositories_interface import \
      ThesisRepositoriesInterface
@@ -11,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 @dataclass
 class ThesisPresenter:
     repository: ThesisRepositoriesInterface
+
     
     # async def create_thesis(self, thesis_data: CreateThesisSchema, db: AsyncSession):
     #     thesis_id = await self.repository.create_thesis(thesis_data, db)
@@ -81,14 +86,18 @@ class ThesisPresenter:
             raise
 
     async def update_thesis(
-            self, utilisateur_id: int, thesis_slug: int,
-            updated_data: UpdateThesisSchema
-    ):
-        if updated_data.is_empty:
+    self, utilisateur_id: int, thesis_slug: int,
+    updated_data: UpdateThesisSchema,
+    fichier: Optional[UploadFile] = None
+):
+        if updated_data.is_empty and not fichier:
             raise ThesisExceptions().empty_data
-        return await self.repository \
-            .update_thesis(utilisateur_id=utilisateur_id, thesis_slug=thesis_slug,
-                            updated_data=updated_data)
+        return await self.repository.update_thesis(
+            utilisateur_id, 
+            thesis_slug,
+            updated_data,
+            fichier
+        )
     
     async def get_thesisa(self, thesis_slug: int):
         data = {'thesis_slug': thesis_slug}

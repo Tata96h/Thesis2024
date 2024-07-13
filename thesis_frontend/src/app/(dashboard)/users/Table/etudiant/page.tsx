@@ -70,7 +70,7 @@ export default async function ListeEtudiant({ searchParams }: paramsProps) {
         <Separator />
 
         <EtudiantTable
-          searchKey=""
+          searchKey="matricule"
           pageNo={page}
           columns={columns}
           totalUsers={totalUsers}

@@ -51,7 +51,7 @@ export function EnseignantTable<TData, TValue>({
   searchKey,
   totalUsers,
   pageCount,
-  pageSizeOptions = [10, 20, 30, 40, 50],
+  pageSizeOptions = [5,10, 20, 30, 40, 50],
 }: DataTableProps<TData, TValue>) {
  const router = useRouter();
   const pathname = usePathname();

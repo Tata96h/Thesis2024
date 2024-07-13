@@ -43,7 +43,7 @@ export default async function ListeEnseignant({ searchParams }: paramsProps) {
     
     const enseignantRes = await response.json();
     enseignant = enseignantRes.enseignants;
-    // console.log(enseignantRes);
+    console.log(enseignantRes);
     
     totalUsers = enseignantRes.total_users; 
   } catch (error) {

@@ -1,5 +1,7 @@
-from typing import List
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from typing import List, Optional
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status, UploadFile, File, Form
+from pydantic import BaseModel, ValidationError
+import json
 
 from database import get_db_session
 from users.auth.deps import get_user
@@ -49,17 +51,48 @@ async def create_thesis(
         return {"thesis_id": thesis_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
 
 @thesis_controllers.patch(**response_data.get('update_thesis'))
 async def update_thesis(
-        updated_data: UpdateThesisSchema,
-        thesis_slug: int, utilisateur_id: int,
-        presenter: ThesisPresenter = Depends(get_presenter),
+    thesis_slug: int = Path(..., title="The ID of the thesis to update"),
+    utilisateur_id: int = Query(..., title="The ID of the user"),
+    updated_data: str = Form(...),
+    fichier: Optional[UploadFile] = File(None),
+    presenter: ThesisPresenter = Depends(get_presenter),
 ):
-    data: dict = await get_updated_data_slug_user(
-        updated_data, thesis_slug, utilisateur_id)
-    return await presenter.update_thesis(**data)
+    try:
+        # Convertir updated_data de chaîne JSON en dict
+        updated_data_dict = json.loads(updated_data)
+        
+        # Valider updated_data_dict en utilisant UpdateThesisSchema
+        updated_data_obj = UpdateThesisSchema(**updated_data_dict)
+
+        # Vérifiez si `fichier` est une chaîne vide et définissez-le sur None si c'est le cas
+        if isinstance(fichier, str):
+            fichier = None
+
+        # Appelez la méthode `update_thesis` du présentateur pour gérer la mise à jour
+        thesis_id = await presenter.update_thesis(
+            utilisateur_id,
+            thesis_slug,
+            updated_data_obj,
+            fichier
+        )
+
+        # Retournez l'ID de la thèse mise à jour
+        return {"thesis_id": thesis_id}
+
+    except ValidationError as e:
+        # Gérez les erreurs de validation Pydantic avec un code HTTP 422
+        raise HTTPException(status_code=422, detail=e.errors())
+
+    except Exception as e:
+        # Capturez toutes les autres exceptions et renvoyez une réponse HTTP 400
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+    
 
 @thesis_controllers.get(**response_data.get('thesisa'))
 async def get_thesisa(

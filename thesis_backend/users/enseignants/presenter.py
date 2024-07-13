@@ -128,7 +128,7 @@ class EnseignantPresenter:
                                 }} 
                                 .button {{
                                     display: inline-block;
-                                    background-color: #ebbebe;
+                                    background-color: #ebbeb;
                                     color: black;
                                     padding: 10px 20px;
                                     text-decoration: none;

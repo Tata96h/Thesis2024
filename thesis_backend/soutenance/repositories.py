@@ -4,7 +4,8 @@ from datetime import datetime, time, timedelta
 import json
 import random
 from typing import Dict, List, Optional
-from fastapi import HTTPException
+import aiofiles
+from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncResult
 from sqlalchemy import select, insert, delete, update, and_
 from sqlalchemy.orm import subqueryload, aliased
@@ -20,6 +21,7 @@ from .interfaces.repositories_interface import \
 from sqlalchemy import exists
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+import os
 
 
 @dataclass
@@ -186,6 +188,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
 
 
+
     async def get_etudiant_ids(self, session, matricules: list[str]):
         stmt = (
             select(Etudiant.id, Etudiant.matricule)
@@ -196,27 +199,52 @@ class ThesisRepositories(ThesisRepositoriesInterface):
         etudiant_ids = {row.matricule: row.id for row in result}
         return etudiant_ids
     
+   
     async def update_thesis(
     self, utilisateur_id: int, thesis_slug: int,
-    updated_data: UpdateThesisSchema
-    ):
-        await self.__check_thesis(thesis_slug=thesis_slug)
-        values = {**updated_data.dict(exclude_none=True)}
-        if updated_data.numero:
-            values.update({'slug': updated_data.numero})
-        
-        stmt = (
-            update(Thesis)
-            .where(Thesis.slug == thesis_slug)
-            .values(**values)
-        )
-        await self.session.execute(statement=stmt)
-        await self.session.commit()    
-        
+    updated_data: UpdateThesisSchema, fichier: Optional[UploadFile] = None
+):
+        try:
+            # Vérifier l'existence de la thèse
+            await self.__check_thesis(thesis_slug=thesis_slug)
+
+            values = updated_data.dict(exclude_unset=True)
+
+            if updated_data.numero:
+                values['slug'] = updated_data.numero
+
+            if fichier:
+                file_path = f"./soutenance/files/{thesis_slug}_{fichier.filename}"
+                async with aiofiles.open(file_path, 'wb') as out_file:
+                    content = await fichier.read()
+                    await out_file.write(content)
+                values['fichier'] = file_path
+
+            # Exécuter la mise à jour dans la session SQLAlchemy
+            stmt = (
+                update(Thesis)
+                .where(Thesis.slug == thesis_slug)
+                .values(**values)
+            )
+            await self.session.execute(stmt)
+            await self.session.commit()
+
+            return thesis_slug
+
+        except Exception as e:
+            # En cas d'erreur, faire un rollback et lever une exception
+            await self.session.rollback()
+            raise e
+
+
+
+
     async def __check_thesis(self, thesis_slug: str):
         if not (thesis := await self.get_thesisa(thesis_slug=thesis_slug)):
             raise ThesisExceptions().thesis_not_found
         return thesis
+
+    
 
     async def get_all_thesis_with_students(self, annee_id: int, limit: int, offset: int, db: AsyncSession):
         print("Entering get_all_thesis_with_students function")
@@ -237,7 +265,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             # Build the query with necessary joins
             stmt = (
                 select(
-                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.is_theme_valide, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
+                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.is_theme_valide, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, Thesis.fichier,
                     Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
                     choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
                     choix2_user.nom.label('choix2_nom'), choix2_user.prenoms.label('choix2_prenom'),
@@ -293,7 +321,8 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                             'nom': row.maitre_nom,
                             'prenom': row.maitre_prenom
                         },
-                        'etudiants': []
+                        'etudiants': [],
+                        'fichier': row.fichier  # Ajouter le nom du fichier ici
                     }
                 thesis_dict[thesis_id]['etudiants'].append({
                     'etudiant_id': row.utilisateur_id,
@@ -317,6 +346,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
         except Exception as e:
             print(f"Une erreur s'est produite: {str(e)}")
             raise
+
         
     
 
@@ -338,7 +368,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             # Construction de la requête avec les jointures nécessaires
             stmt = (
                 select(
-                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.is_theme_valide, Thesis.numero,
+                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.is_theme_valide, Thesis.fichier, Thesis.numero,
                     Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
                     Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
                     choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
@@ -372,6 +402,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     thesis_dict[thesis_id] = {
                         'thesis_id': thesis_id,
                         'theme': row.theme,
+                        'fichier': row.fichier,
                         'numero': row.numero,
                         'validation': row.is_theme_valide,
                         'choix1': {
@@ -438,7 +469,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             # Build the query with necessary joins
             stmt = (
                 select(
-                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
+                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.fichier, Thesis.maitre_memoire_id, 
                     Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
                     choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
                     choix2_user.nom.label('choix2_nom'), choix2_user.prenoms.label('choix2_prenom'),
@@ -481,6 +512,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     thesis_dict[thesis_id] = {
                         'thesis_id': thesis_id,
                         'theme': row.theme,
+                        'fichier': row.fichier,
                         'choix1': {
                             'id': row.choix1_id,
                             'nom': row.choix1_nom,
@@ -517,6 +549,8 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             raise
 
 
+    
+
     async def get_thesis_by_maitre(self, annee_id: int, maitre_memoire_id: int, limit: int, offset: int, db: AsyncSession):
         print("Entering get_thesis_by_maitre function")
         print(f"Received annee_id: {annee_id}, maitre_memoire_id: {maitre_memoire_id}")
@@ -539,7 +573,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             # Build the query with necessary joins
             stmt = (
                 select(
-                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.maitre_memoire_id, 
+                    Thesis.id.label('thesis_id'), Thesis.theme, Thesis.choix1_id, Thesis.choix2_id, Thesis.annee_id, Thesis.fichier, Thesis.maitre_memoire_id, 
                     Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
                     choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
                     choix2_user.nom.label('choix2_nom'), choix2_user.prenoms.label('choix2_prenom'),
@@ -554,7 +588,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                 .outerjoin(maitre_enseignant, Thesis.maitre_memoire_id == maitre_enseignant.id)
                 .outerjoin(maitre_user, maitre_enseignant.utilisateur_id == maitre_user.id)
                 .where(Thesis.annee_id == annee_id)
-                .where(Thesis.maitre_memoire_id == maitre_memoire_id)  # Filtre pour maitre_memoire_id
+                .where(Thesis.maitre_memoire_id == maitre_memoire_id)
                 .limit(limit)
                 .offset(offset)
             )
@@ -566,7 +600,7 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                 raise Exception("Database execution returned None")
 
             # Aggregating results
-            thesis_dict = {}
+            thesis_list = []
             all_results = result.all()
             print(f"Number of results: {len(all_results)}")
 
@@ -574,43 +608,49 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                 raise Exception(f"No results found for annee_id: {annee_id} and maitre_memoire_id: {maitre_memoire_id}")
 
             for row in all_results:
-                thesis_id = row.thesis_id
-                if thesis_id not in thesis_dict:
-                    thesis_dict[thesis_id] = {
-                        'thesis_id': thesis_id,
-                        'theme': row.theme,
-                        'choix1': {
-                            'id': row.choix1_id,
-                            'nom': row.choix1_nom,
-                            'prenom': row.choix1_prenom
-                        },
-                        'choix2': {
-                            'id': row.choix2_id,
-                            'nom': row.choix2_nom,
-                            'prenom': row.choix2_prenom
-                        },
-                        'annee_id': row.annee_id,
-                        'maitre_memoire': {
-                            'id': row.maitre_memoire_id,
-                            'nom': row.maitre_nom,
-                            'prenom': row.maitre_prenom
-                        },
-                        'etudiants': []
-                    }
-                thesis_dict[thesis_id]['etudiants'].append({
-                    'etudiant_id': row.utilisateur_id,
-                    'nom': row.etudiant_nom,
-                    'prenom': row.etudiant_prenom
-                })
+                thesis_dict = {
+                    'thesis_id': row.thesis_id,
+                    'theme': row.theme,
+                    'fichier': row.fichier ,
+                    'choix1': {
+                        'id': row.choix1_id,
+                        'nom': row.choix1_nom,
+                        'prenom': row.choix1_prenom
+                    },
+                    'choix2': {
+                        'id': row.choix2_id,
+                        'nom': row.choix2_nom,
+                        'prenom': row.choix2_prenom
+                    },
+                    'annee_id': row.annee_id,
+                    'maitre_memoire': {
+                        'id': row.maitre_memoire_id,
+                        'nom': row.maitre_nom,
+                        'prenom': row.maitre_prenom
+                    },
+                    
+                    'etudiants': [{
+                        'etudiant_id': row.utilisateur_id,
+                        'nom': row.etudiant_nom,
+                        'prenom': row.etudiant_prenom
+                    }]
+                }
+                thesis_list.append(thesis_dict)
 
-            if not thesis_dict:
+            if not thesis_list:
                 raise Exception(f"No theses found after processing for annee_id: {annee_id} and maitre_memoire_id: {maitre_memoire_id}")
 
-            return list(thesis_dict.values())
+            # Créez un dictionnaire avec la clé "theses_with_maitres"
+            result_dict = {
+                "theses_with_maitres": json.dumps(thesis_list)
+            }
+
+            return result_dict
 
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             raise
+
     
 
     
@@ -623,9 +663,11 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
         try:
             # 1. Utiliser get_all_thesis_with_students_by_departement pour récupérer les thèses par département et année
-            theses_choices = await self.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit=1000, offset=0, db=db)
+            theses_choices_json = await self.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit=1000, offset=0, db=db)
+            theses_choices = json.loads(theses_choices_json)
             print(theses_choices)
 
+            
             if not theses_choices:
                 raise ValueError(f"Aucune soutenance trouvée avec des choix non attribués pour l'année {annee_id} et le département {departement_id}.")
 
@@ -693,9 +735,12 @@ class ThesisRepositories(ThesisRepositoriesInterface):
     async def get_planification(self, annee_id: int, departement_id: int, plan_data: PlanificationSchema, db: AsyncSession):
         try:
             # Ensure annee_id and departement_id are used correctly
-            theses = await self.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit=1000, offset=0, db=db)
+            theses_json = await self.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit=1000, offset=0, db=db)
             
-            # Fetch rooms and juries
+            # Parse the JSON string into a Python object
+            theses = json.loads(theses_json)
+            
+            # Rest of the code remains the same
             rooms_stmt = select(Salle)
             result = await db.execute(rooms_stmt)
             rooms = result.scalars().all()
@@ -723,7 +768,6 @@ class ThesisRepositories(ThesisRepositoriesInterface):
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             raise
-
 
 
     async def schedule_defenses(self, theses, rooms, jurys, start_date, start_time, end_time, annee_id: int, departement_id: int, db: AsyncSession):
@@ -803,6 +847,12 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
         await db.commit()
         return schedules
+    
+
+
+
+
+    
     async def get_annees(self, limit: int, offset: int):
             stmt = select(Annee) \
                 .limit(limit) \

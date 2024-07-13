@@ -15,6 +15,18 @@ export type Choix = {
   choix1: string;
   choix2: string;
 };
+export type Memoire = {
+  theme: string;
+  choix1: string;
+  choix2: string;
+};
+export type Jury = {
+  numero: string;
+  president: string;
+  examinateur: string;
+  rapporteur: string;
+
+};
 export type Enseignant = {
   id: number;
   username: string;

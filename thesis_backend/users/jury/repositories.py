@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 import random, string
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncResult
 from sqlalchemy import select, insert, delete, update, and_, or_
 from sqlalchemy.orm import subqueryload, aliased
@@ -9,7 +10,9 @@ from users.auth.models import Enseignant, Jury, Users
 from .schemas import CreateJurySchema, JurySchema, UpdateJurySchema
 from .exceptions import JuryExceptions
 from .interfaces.repositories_interface import JuryRepositoriesInterface
-
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+import os
 
 @dataclass
 class JuryRepositories(JuryRepositoriesInterface):
@@ -223,7 +226,12 @@ class JuryRepositories(JuryRepositoriesInterface):
         return jury_data
 
 
-    async def get_jurys_by_departement(self, limit: int, offset: int, departement_id: int):
+    async def get_jurys_by_departement(self,
+    limit: int, 
+    offset: int, 
+    departement_id: int, 
+    
+):
         # Aliases for user tables for president, examinateur, and rapporteur
         president_user = aliased(Users)
         examinateur_user = aliased(Users)
@@ -235,7 +243,7 @@ class JuryRepositories(JuryRepositoriesInterface):
         # Build the query with necessary joins and where clause for department filtering
         stmt = (
             select(
-                Jury.id, Jury.numero, Jury.president_id, Jury.examinateur_id, Jury.rapporteur_id,
+                Jury.id.label('jury_id'), Jury.numero, Jury.president_id, Jury.examinateur_id, Jury.rapporteur_id,
                 president_user.nom.label('president_nom'), president_user.prenoms.label('president_prenom'),
                 examinateur_user.nom.label('examinateur_nom'), examinateur_user.prenoms.label('examinateur_prenom'),
                 rapporteur_user.nom.label('rapporteur_nom'), rapporteur_user.prenoms.label('rapporteur_prenom')
@@ -246,7 +254,7 @@ class JuryRepositories(JuryRepositoriesInterface):
             .outerjoin(examinateur_user, examinateur_enseignant.utilisateur_id == examinateur_user.id)
             .outerjoin(rapporteur_enseignant, Jury.rapporteur_id == rapporteur_enseignant.id)
             .outerjoin(rapporteur_user, rapporteur_enseignant.utilisateur_id == rapporteur_user.id)
-            .where(and_(president_enseignant.departement_id == departement_id))
+            .where(president_enseignant.departement_id == departement_id)
             .limit(limit)
             .offset(offset)
         )
@@ -258,7 +266,7 @@ class JuryRepositories(JuryRepositoriesInterface):
         formatted_jurys = []
         for jury in jurys:
             formatted_jurys.append({
-                'id': jury.id,
+                'jury_id': jury.jury_id,
                 'numero': jury.numero,
                 'president': {
                     'id': jury.president_id,
@@ -277,9 +285,11 @@ class JuryRepositories(JuryRepositoriesInterface):
                 }
             })
 
-        return formatted_jurys
-                
-                
+        # Encodage des données en JSON
+        json_compatible_item_data = jsonable_encoder({"jurys": formatted_jurys})
+        return JSONResponse(content=json_compatible_item_data)
+                        
+                    
 
     async def __check_jury(self, numero: str):
             if not (jury := await self.get_jury(numero=numero)):

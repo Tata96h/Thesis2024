@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
+from fastapi import UploadFile
 from pydantic import BaseModel, Field
 from datetime import datetime, time, date
 
@@ -9,6 +10,7 @@ from users.profile.schemas import UserSchema
 class CreateThesisSchema(BaseModel):
     numero: Optional[int]
     theme: Optional[str] = Field(None, max_length=200)
+    fichier: Optional[str] = Field(None, max_length=200)
     lieu_stage: Optional[str] = Field(None, max_length=200)
     responsable: Optional[str] = Field(None, max_length=200)
     cahier_charge: Optional[str] = Field(None, max_length=255)
@@ -23,6 +25,7 @@ class CreateThesisSchema(BaseModel):
 class UpdateThesisSchema(BaseModel):
     numero: Optional[int] 
     theme: Optional[str] = Field(None, max_length=200)
+    # fichier: Optional[Union[str, UploadFile]] = Field(None)
     lieu_stage: Optional[str] = Field(None, max_length=200)
     responsable: Optional[str] = Field(None, max_length=200)
     cahier_charge: Optional[str] = Field(None, max_length=200)
