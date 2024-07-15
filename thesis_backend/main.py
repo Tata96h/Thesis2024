@@ -9,8 +9,11 @@ from users.jury.controllers import jury_controllers
 from soutenance.controllers import thesis_controllers
 import uvicorn
 from settings import get_settings
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI(title='SoutenanceManager', version='1.0.0')
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Liste des origines autorisées pour CORS
 origins = [

@@ -60,3 +60,8 @@ class ThesisRepositoriesInterface(ABC):
     @abstractmethod
     async def get_annees(self, limit: int, offset: int):
         pass
+
+    @abstractmethod
+    async def get_salles(self, limit: int, offset: int):
+        pass
+

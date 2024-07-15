@@ -57,14 +57,14 @@ export default async function Page({ searchParams }: ParamsProps) {
         <div className="flex items-start justify-between">
           <Heading
             title={`Jury (${totalUsers})`}
-            description="Gestion des jury par département."
+            description="Gestion des jurys par département."
           />
 
           <Link
             href={"/users/forms/create/jury"}
             className={cn(buttonVariants({ variant: "default" }))}
           >
-            <Plus className="mr-2 h-4 w-4" /> Ajouter un nouveau jury
+            <Plus className="mr-2 h-4 w-4" /> Créer jury
           </Link>
         </div>
         <Separator />

@@ -7,7 +7,7 @@ from database import get_db_session
 from users.auth.deps import get_user
 from users.etudiants.schemas import CreateEtudiantSchema
 from .presenter import  ThesisPresenter
-from .schemas import CreateThesisSchema, PlanificationSchema, UpdateThesisSchema, AnneeSchema
+from .schemas import CreateThesisSchema, PlanificationSchema, SalleSchema, UpdateThesisSchema, AnneeSchema
 from sqlalchemy.ext.asyncio import AsyncSession
 from .deps import get_limit_offset_annee, get_limit_offset_thesis, response_data, get_user,  get_presenter, \
     get_slug_user, get_thesis_user, get_limit_offset_user, \
@@ -206,5 +206,20 @@ async def get_annees(
         return await presenter.get_annees(**data)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
+@thesis_controllers.get('/get_salles/', response_model=List[SalleSchema])
+async def get_salles(
+    presenter: ThesisPresenter = Depends(get_presenter),
+    limit: int | None = 1000,
+    offset: int | None = 0,
+    ):
+    try:
+        data: dict = await get_limit_offset_annee(limit, offset)
+        return await presenter.get_salles(**data)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 
 

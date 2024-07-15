@@ -42,10 +42,13 @@ export default async function Page({ searchParams }: ParamsProps) {
       throw new Error("Erreur lors de la récupération des choix");
     }
     const choixRes = await response.json();
-    choix = JSON.parse(choixRes.theses_with_students);
-    totalUsers = choixRes.total_count || choix.length;
-    
-    //  console.log(choix);
+    // console.log(choixRes);
+    const choixRe = JSON.parse(choixRes.theses_with_students.body);
+    const choix = choixRe.theses_with_students;
+
+    console.log(choix);
+    const totalUsers = choixRes.total_count || choix.length;
+
   } catch (error) {
     console.error("Erreur lors de la récupération des choix:", error);
   }
@@ -62,7 +65,7 @@ export default async function Page({ searchParams }: ParamsProps) {
         <div className="flex items-start justify-between">
           <Heading
             title={`Maître mémoire (${totalUsers})`}
-            description="Gérer les choix des étudiants pour les mémoires."
+            description="Gestion des choix des étudiants pour les mémoires."
           />
 
 <       ClientButton /> 

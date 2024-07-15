@@ -17,7 +17,7 @@ const ClientButton = () => {
       console.log(parsedEnseignantInfo);
     }
   }, []);
-  
+
   const assignerChoix = async () => {
     if (!enseignantInfo) {
       console.error('Enseignant info not found');
@@ -40,7 +40,7 @@ const ClientButton = () => {
       const data = await response.json();
       console.log('Choix assigné avec succès:', data);
 
-      router.push('/users/Table/maitre');
+      router.push('users/Table/maitre');
     } catch (error) {
       console.error('Erreur lors de l\'assignation du choix:', error);
     }

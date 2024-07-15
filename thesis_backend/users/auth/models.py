@@ -195,8 +195,15 @@ class Jury(Base):
     
     @validates('president_id', 'examinateur_id', 'rapporteur_id')
     def validate_unique_enseignant(self, key, value):
-        ids = [self.president_id, self.examinateur_id, self.rapporteur_id]
-        ids.remove(value)
+        if value is None:
+            return value
+        
+        ids = [
+            self.president_id if key != 'president_id' else None,
+            self.examinateur_id if key != 'examinateur_id' else None,
+            self.rapporteur_id if key != 'rapporteur_id' else None
+        ]
+        
         if value in ids:
             raise ValueError("Un enseignant ne peut pas occuper plusieurs rôles dans le même jury.")
         return value

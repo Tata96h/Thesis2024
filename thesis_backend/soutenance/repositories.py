@@ -741,9 +741,10 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             theses = json.loads(theses_json)
             
             # Rest of the code remains the same
-            rooms_stmt = select(Salle)
+            rooms_stmt = select(Salle).where(Salle.libelle.in_(plan_data.salles))
             result = await db.execute(rooms_stmt)
             rooms = result.scalars().all()
+
             
             jurys_stmt = (
                 select(Jury)
@@ -855,6 +856,14 @@ class ThesisRepositories(ThesisRepositoriesInterface):
     
     async def get_annees(self, limit: int, offset: int):
             stmt = select(Annee) \
+                .limit(limit) \
+                .offset(offset)
+            result = await self.session.execute(stmt)
+            return result.scalars().all()
+    
+
+    async def get_salles(self, limit: int, offset: int):
+            stmt = select(Salle) \
                 .limit(limit) \
                 .offset(offset)
             result = await self.session.execute(stmt)

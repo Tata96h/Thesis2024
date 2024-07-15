@@ -2,7 +2,7 @@ from typing import List
 from fastapi import status, Depends
 from permissions import UserPermission
 from users.auth.token_service import TokenService
-from .schemas import AnneeSchema, AssignChoicesSchema, ThesisSchema, CreateThesisSchema, UpdateThesisSchema
+from .schemas import AnneeSchema, AssignChoicesSchema, SalleSchema, ThesisSchema, CreateThesisSchema, UpdateThesisSchema
 from .repositories import ThesisRepositories
 
 from .presenter import ThesisPresenter
@@ -113,5 +113,9 @@ response_data = {
     'get_annees': {
         'path': '/get_filieres/',
         'response_model': List[AnneeSchema]
+    },
+        'get_salles': {
+        'path': '/get_salles/',
+        'response_model': List[SalleSchema]
     },
 }

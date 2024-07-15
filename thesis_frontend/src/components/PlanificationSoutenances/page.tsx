@@ -214,48 +214,47 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import React, { useState, useEffect } from 'react';
-import DefaultLayout from '../Layouts/DefaultLayout';
-
 
 const PlanificationSoutenances = () => {
-  
-    const [soutenances, setSoutenances] = useState([]);
-    const [enseignantInfo, setEnseignantInfo] = useState(null);
-  
-    useEffect(() => {
-      const fetchEnseignantInfo = () => {
-        const storedEnseignantInfo = localStorage.getItem('enseignantInfo');
-        if (storedEnseignantInfo) {
-          try {
-            const parsedEnseignantInfo = JSON.parse(storedEnseignantInfo);
-            setEnseignantInfo(parsedEnseignantInfo);
-            
-            
-          } catch (error) {
-            console.error("Erreur lors du parsing des données enseignant:", error);
-          }
-        }
-      };
-  
-      const fetchPlanificationInfo = () => {
-        const storedInfo = localStorage.getItem('planificationInfo');
-        if (storedInfo && enseignantInfo) {
-          try {
-            const parsedInfo = JSON.parse(storedInfo);
-            const filteredSoutenances = parsedInfo.filter(
-              soutenance => soutenance.departement_id === enseignantInfo.departement_id
-            );
-            setSoutenances(filteredSoutenances);
-          } catch (error) {
-            console.error("Erreur lors du parsing des données de planification:", error);
-          }
-        }
-      };
-  
-      fetchEnseignantInfo();
-      fetchPlanificationInfo();
+  const [soutenances, setSoutenances] = useState([]);
+  const [enseignantInfo, setEnseignantInfo] = useState(null);
 
-     }, [enseignantInfo]);
+  useEffect(() => {
+    const fetchEnseignantInfo = () => {
+      const storedEnseignantInfo = localStorage.getItem('enseignantInfo');
+      if (storedEnseignantInfo) {
+        try {
+          const parsedEnseignantInfo = JSON.parse(storedEnseignantInfo);
+          setEnseignantInfo(parsedEnseignantInfo);
+          fetchPlanificationInfo(parsedEnseignantInfo);
+        } catch (error) {
+          console.error("Erreur lors du parsing des données enseignant:", error);
+        }
+      }
+    };
+
+    const fetchPlanificationInfo = (enseignantData) => {
+      const storedInfo = localStorage.getItem('planificationInfo');
+      console.log(storedInfo);
+      
+      if (storedInfo && enseignantData) {
+        try {
+          const parsedInfo = JSON.parse(storedInfo);
+          const filteredSoutenances = parsedInfo.filter(
+            soutenance => soutenance.departement_id === enseignantData.departement_id
+          );
+          setSoutenances(filteredSoutenances);
+          console.log(soutenances);
+          
+        } catch (error) {
+          console.error("Erreur lors du parsing des données de planification:", error);
+        }
+      }
+    };
+
+    fetchEnseignantInfo();
+  }, []);
+
   
     const downloadPDF = () => {
       const doc = new jsPDF();
@@ -296,7 +295,7 @@ const PlanificationSoutenances = () => {
     return (
     //   <>
     // <DefaultLayout>
-          <div className="container mx-auto p-4">
+          <div className="container mx-auto p-4 mt-20">
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-2xl font-bold">Planification des Soutenances - Département {enseignantInfo.departement.nom}</h1>
               <button 
@@ -336,7 +335,7 @@ const PlanificationSoutenances = () => {
                 </table>
               </div>
             ) : (
-              <div>Aucune soutenance planifiée pour votre département.</div>
+              <div>Aucune soutenance planifiée pour le département {enseignantInfo.departement.nom}.</div>
             )}
           </div>
           // </DefaultLayout>

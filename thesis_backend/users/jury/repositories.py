@@ -3,15 +3,17 @@ from typing import List
 import random, string
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncResult
-from sqlalchemy import select, insert, delete, update, and_, or_
-from sqlalchemy.orm import subqueryload, aliased
+from sqlalchemy import select, insert, delete, update, and_, or_, func
+from sqlalchemy.orm import subqueryload, aliased, joinedload
+from sqlalchemy.exc import IntegrityError
 from database import Base
-from users.auth.models import Enseignant, Jury, Users
+from users.auth.models import Enseignant, Grade, Jury, Users
 from .schemas import CreateJurySchema, JurySchema, UpdateJurySchema
 from .exceptions import JuryExceptions
 from .interfaces.repositories_interface import JuryRepositoriesInterface
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from itertools import combinations
 import os
 
 @dataclass
@@ -74,6 +76,7 @@ class JuryRepositories(JuryRepositoriesInterface):
 
         return formatted_jurys
 
+
     async def generate_unique_numero(self):
         print("Génération d'un numéro de jury unique...")
         first_letter = random.choice(string.ascii_uppercase)  # Choisir une lettre majuscule
@@ -82,60 +85,94 @@ class JuryRepositories(JuryRepositoriesInterface):
         print(f"Numéro de jury généré: {numero}")
         return numero
     
-    async def create_jury(self, jury_data: CreateJurySchema):
-
-        # Générer un numéro de jury unique
-        numero = await self.generate_unique_numero()
-        while await self.get_jury(numero):
-            print(f"Le numéro de jury {numero} existe déjà. Génération d'un nouveau numéro...")
-            numero = await self.generate_unique_numero()
-            print(f"Numéro de jury unique généré: {numero}")
-            
-        president_id = jury_data.president_id
-        examinateur_id = jury_data.examinateur_id
-        rapporteur_id = jury_data.rapporteur_id
-
-        # Vérifier si un même ID est utilisé pour plusieurs rôles
-        roles = [president_id, examinateur_id, rapporteur_id]
-        unique_roles = set(filter(None, roles))
-        if len(unique_roles) != len(list(filter(None, roles))):
-            raise ValueError("Un même ID ne peut pas être utilisé pour plusieurs rôles dans un jury.")
-
-        # Normaliser les ids pour comparaison
-        ids_to_check = sorted(unique_roles)
-        print(ids_to_check)
-
-        # Vérifier si un jury avec les mêmes membres existe déjà
-        stmt = select(Jury).filter(
-            and_(
-                or_(Jury.president_id.in_(ids_to_check), Jury.president_id.is_(None)),
-                or_(Jury.examinateur_id.in_(ids_to_check), Jury.examinateur_id.is_(None)),
-                or_(Jury.rapporteur_id.in_(ids_to_check), Jury.rapporteur_id.is_(None))
-            )
-        )
-        result = await self.session.execute(stmt)
-        existing_jurys = result.scalars().all()
-
-        for jury in existing_jurys:
-            existing_ids = sorted([id for id in [jury.president_id, jury.examinateur_id, jury.rapporteur_id] if id is not None])
-            if existing_ids == ids_to_check:
-                raise ValueError(f"Un jury avec la composition {ids_to_check} existe déjà sous le numéro {jury.numero}")
-
-        # Si aucun jury existant avec la même composition, insérer le nouveau jury
-        values = {
-            'numero': numero,
-            'president_id': president_id,
-            'examinateur_id': examinateur_id,
-        }
-        if rapporteur_id is not None:
-            values['rapporteur_id'] = rapporteur_id
-
-        stmt = insert(Jury).values(**values).returning(Jury)
-        result = await self.session.execute(statement=stmt)
-        await self.session.commit()
-        return {'detail': f'Jury numéro {numero} créé avec succès'}
-
     
+    ORDRE_GRADES = {
+        "Assistant": 1,
+        "Attaché de Recherche": 2,
+        "Maître-Assistant": 3,
+        "Chargé de Recherche": 4,
+        "Maître de Conférences": 5,
+        "Directeur de Recherche": 6,
+        "Professeur Titulaire": 7
+    
+    }
+   
+    
+   
+
+
+
+
+
+
+    async def create_jury(self, jury_data: CreateJurySchema):
+        if jury_data.taille_jury not in [2, 3]:
+            raise ValueError("La taille du jury doit être 2 ou 3.")
+
+        # Récupérer tous les enseignants du département avec leurs grades
+        stmt = select(Enseignant).options(joinedload(Enseignant.grade)).filter(Enseignant.departement_id == jury_data.departement_id)
+        result = await self.session.execute(stmt)
+        enseignants = result.unique().scalars().all()
+
+        if len(enseignants) < jury_data.taille_jury:
+            raise ValueError(f"Il n'y a pas assez d'enseignants dans ce département pour former un jury de {jury_data.taille_jury} membres.")
+
+        jurys_crees = []
+
+        # Fonction pour créer un jury
+        async def creer_jury(membres):
+            # Générer un numéro unique pour le jury
+            numero = await self.generate_unique_numero()
+            while await self.get_jury(numero):
+                numero = await self.generate_unique_numero()
+
+            # Trier les membres par grade (descendant)
+            membres_tries = sorted(membres, key=lambda e: self.ORDRE_GRADES.get(e.grade.nom, 0), reverse=True)
+
+            president_id = membres_tries[0].id
+            examinateur_id = membres_tries[1].id
+            rapporteur_id = membres_tries[2].id if len(membres_tries) > 2 else None
+
+            # Vérifier si un jury avec cette composition existe déjà
+            existing_jury_stmt = select(Jury).where(
+                Jury.president_id == president_id,
+                Jury.examinateur_id == examinateur_id,
+                Jury.rapporteur_id == rapporteur_id
+            ).limit(1)
+            existing_jury_result = await self.session.execute(existing_jury_stmt)
+            existing_jury = existing_jury_result.scalar_one_or_none()
+
+            if existing_jury:
+                print(f"Le jury avec la composition {[president_id, examinateur_id, rapporteur_id]} existe déjà.")
+                return
+
+            # Créer le nouveau jury
+            new_jury = Jury(
+                numero=numero,
+                president_id=president_id,
+                examinateur_id=examinateur_id,
+                rapporteur_id=rapporteur_id
+            )
+
+            try:
+                self.session.add(new_jury)
+                await self.session.commit()
+                jurys_crees.append(numero)
+            except IntegrityError:
+                await self.session.rollback()
+                print(f"Le jury avec la composition {[president_id, examinateur_id, rapporteur_id]} existe déjà.")
+
+        # Créer toutes les combinaisons possibles
+        combinaisons = list(combinations(enseignants, jury_data.taille_jury))
+
+        # Créer les jurys
+        for combo in combinaisons:
+            await creer_jury(combo)
+
+        return {'detail': f'{len(jurys_crees)} jurys créés avec succès: {", ".join(jurys_crees)}'}
+
+
+                    
     
     async def delete_jury(self, numero: str):
         # Récupérer le jury à supprimer

@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import UploadFile
 
 from file_service.interfaces.file_service_interface import FileServiceInterface
-from .schemas import AnneeSchema, CreateThesisSchema, PlanificationSchema, UpdateThesisSchema
+from .schemas import AnneeSchema, CreateThesisSchema, PlanificationSchema, SalleSchema, UpdateThesisSchema
 from .interfaces.repositories_interface import \
      ThesisRepositoriesInterface
     
@@ -117,5 +117,9 @@ class ThesisPresenter:
     async def get_annees(self, limit: int, offset: int) -> List[AnneeSchema]:
         annees = await self.repository.get_annees(limit, offset)
         return [AnneeSchema.from_orm(annee) for annee in annees]
+    
+    async def get_salles(self, limit: int, offset: int) -> List[SalleSchema]:
+        salles = await self.repository.get_salles(limit, offset)
+        return [SalleSchema.from_orm(salle) for salle in salles]
     
     

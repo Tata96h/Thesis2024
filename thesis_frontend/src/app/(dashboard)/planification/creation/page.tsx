@@ -9,6 +9,7 @@ const FormulairePlanificationSoutenance = () => {
   const [messageType, setMessageType] = useState<"success" | "error" | undefined>(undefined);
   const [message, setMessage] = useState("");
   const [enseignantInfo, setEnseignantInfo] = useState<any>(null);
+  const [salleOptions, setSalleOptions] = useState([]);
 
   useEffect(() => {
     const storedEnseignantInfo = localStorage.getItem('enseignantInfo');
@@ -22,7 +23,37 @@ const FormulairePlanificationSoutenance = () => {
     date: "",
     heure_debut: "",
     heure_fin: "",
+    salles:[]
   });
+
+  useEffect(() => {
+    const fetchSalleOptions = async () => {
+     try {
+       const response = await fetch(
+         "http://127.0.0.1:8000/thesis/get_salles/?limit=1000&offset=0"
+       );
+       if (response.ok) {
+         const salles = await response.json();
+         setSalleOptions(
+           salles.map((salle) => ({
+             value: salle.id,
+             label: salle.libelle,
+           }))
+         );
+       } else {
+         console.error(
+           "Erreur lors de la récupération des salles :",
+           response.status
+         );
+       }
+     } catch (error) {
+       console.error("Erreur lors de la récupération des salles :", error);
+     }
+   };
+   fetchSalleOptions();
+ 
+ }, []);
+
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -44,6 +75,8 @@ const FormulairePlanificationSoutenance = () => {
     } else {
       try {
         console.log(enseignantInfo.departement_id);
+        console.log(formData);
+        
         
         const response = await fetch(`http://127.0.0.1:8000/thesis/planification/4/${enseignantInfo.departement_id}`, {
           method: "POST",
@@ -82,6 +115,7 @@ const FormulairePlanificationSoutenance = () => {
       date: "",
       heure_debut: "",
       heure_fin: "",
+      salles: []
     });
   };
 
@@ -128,6 +162,22 @@ const FormulairePlanificationSoutenance = () => {
                   className="flex-1 border p-2 rounded"
                   required
                 />
+              </div>
+
+              <div className="flex space-x-4">
+                <select
+                  className="relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-5 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                  value={formData.salles}
+                  onChange={handleInputChange}
+                  multiple
+                >
+                  <option value="">Sélectionnez des salles</option>
+                  {salleOptions.map((option) => (
+                    <option key={option.label} value={option.label}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex justify-center space-x-20 mt-6 ">

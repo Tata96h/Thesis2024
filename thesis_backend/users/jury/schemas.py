@@ -7,10 +7,9 @@ from users.auth.schemas import UsersSchema
 
 
 class CreateJurySchema(BaseModel):
-    numero: Optional[str]
-    president_id: int
-    examinateur_id: int
-    rapporteur_id: int | None
+    departement_id: int
+    taille_jury: int  # 2 ou 3
+
 
 class UpdateJurySchema(BaseModel):
     numero: str

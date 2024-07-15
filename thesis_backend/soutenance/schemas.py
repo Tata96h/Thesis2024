@@ -90,11 +90,19 @@ class AnneeSchema(BaseModel):
         class Config:
             orm_mode = True
 
+class SalleSchema(BaseModel):
+        id: int
+        libelle: str
+
+        class Config:
+            orm_mode = True
+
 
 class PlanificationSchema(BaseModel):
     date: date
     heure_debut:time
     heure_fin: time
+    salles: List[str]
 
     class Config:
         orm_mode = True
