@@ -1,15 +1,16 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from 'react';
 import DefaultLayout from '@/components/Layouts/DefaultLayout';
 import AlertMessage from "@/components/AlertMessage/page";
 import { useRouter } from "next/navigation";
-
 
 const FormulairePlanificationSoutenance = () => {
   const [messageType, setMessageType] = useState<"success" | "error" | undefined>(undefined);
   const [message, setMessage] = useState("");
   const [enseignantInfo, setEnseignantInfo] = useState<any>(null);
   const [salleOptions, setSalleOptions] = useState([]);
+
+  const router = useRouter();
 
   useEffect(() => {
     const storedEnseignantInfo = localStorage.getItem('enseignantInfo');
@@ -23,45 +24,53 @@ const FormulairePlanificationSoutenance = () => {
     date: "",
     heure_debut: "",
     heure_fin: "",
-    salles:[]
+    salles: []
   });
 
   useEffect(() => {
     const fetchSalleOptions = async () => {
-     try {
-       const response = await fetch(
-         "http://127.0.0.1:8000/thesis/get_salles/?limit=1000&offset=0"
-       );
-       if (response.ok) {
-         const salles = await response.json();
-         setSalleOptions(
-           salles.map((salle) => ({
-             value: salle.id,
-             label: salle.libelle,
-           }))
-         );
-       } else {
-         console.error(
-           "Erreur lors de la récupération des salles :",
-           response.status
-         );
-       }
-     } catch (error) {
-       console.error("Erreur lors de la récupération des salles :", error);
-     }
-   };
-   fetchSalleOptions();
- 
- }, []);
-
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/thesis/get_salles/?limit=1000&offset=0"
+        );
+        if (response.ok) {
+          const salles = await response.json();
+          console.log("Salles récupérées :", salles);
+          setSalleOptions(
+            salles.map((salle) => ({
+              value: salle.id,
+              label: salle.libelle,
+            }))
+          );
+        } else {
+          console.error(
+            "Erreur lors de la récupération des salles :",
+            response.status
+          );
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des salles :", error);
+      }
+    };
+    fetchSalleOptions();
+  }, []);
 
   const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-    console.log(value);
+    const { name, value, type, selectedOptions } = event.target;
+    if (type === "select-multiple") {
+      const values = Array.from(selectedOptions, (option) => option.value);
+      console.log("Salles sélectionnées :", values);
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: values,
+      }));
+    } else {
+      console.log("Changement de formulaire :", { [name]: value });
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -74,9 +83,8 @@ const FormulairePlanificationSoutenance = () => {
       return;
     } else {
       try {
-        console.log(enseignantInfo.departement_id);
-        console.log(formData);
-        
+        console.log("Enseignant Info :", enseignantInfo);
+        console.log("Données du formulaire :", formData);
         
         const response = await fetch(`http://127.0.0.1:8000/thesis/planification/4/${enseignantInfo.departement_id}`, {
           method: "POST",
@@ -90,12 +98,8 @@ const FormulairePlanificationSoutenance = () => {
         if (response.ok) {
           setMessageType("success");
           setMessage("Soutenance planifiée avec succès.");
-          console.log("Soutenance :", data);
           localStorage.setItem("planificationInfo", JSON.stringify(data));
-          console.log(localStorage);
-
           router.push('/planification/affichage');
-          
         } else {
           setMessageType("error");
           setMessage("Erreur lors de la planification.");
@@ -122,7 +126,7 @@ const FormulairePlanificationSoutenance = () => {
   return (
     <DefaultLayout>
       <div className="flex justify-center gap-9 pt-20">
-        <div className="w-full max-w-4xl px-4"> 
+        <div className="w-full max-w-4xl px-4">
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
               <h3 className="font-black text-3xl text-blue-500 dark:text-white">
@@ -167,11 +171,11 @@ const FormulairePlanificationSoutenance = () => {
               <div className="flex space-x-4">
                 <select
                   className="relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-5 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                  name="salles"
                   value={formData.salles}
                   onChange={handleInputChange}
                   multiple
                 >
-                  <option value="">Sélectionnez des salles</option>
                   {salleOptions.map((option) => (
                     <option key={option.label} value={option.label}>
                       {option.label}

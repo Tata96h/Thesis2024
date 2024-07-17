@@ -1,9 +1,9 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import { Jury } from "@/types/user";
+import { Choix } from "@/types/user";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export const columns: ColumnDef<Jury>[] = [
+export const columns: ColumnDef<Choix>[] = [
   {
     id: "select",
     header: ({ table }) => (

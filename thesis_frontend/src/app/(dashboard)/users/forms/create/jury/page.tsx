@@ -148,7 +148,7 @@ const handleSubmit = async (e) => {
          
           <div className="border-b border-stroke px-6.5  py-4 dark:border-strokedark">
             <h3 className="font-black text-3xl text-blue-500 dark:text-white">
-              Ajouter un étudiant
+              Générer jury
             </h3>
              <div className="mt-5">
 

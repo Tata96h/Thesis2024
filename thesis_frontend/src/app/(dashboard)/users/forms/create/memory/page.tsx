@@ -62,10 +62,8 @@ const DepotMemoire = () => {
 
     try {
       const formData = new FormData();
-      formData.append('numero', memoireInfo.numero);
-      formData.append('theme', theme);
+      formData.append('updated_data', JSON.stringify({ numero: memoireInfo.numero, theme: theme }));
       formData.append('fichier', fichier);
-      console.log(formData);
       
       const response = await fetch(`http://127.0.0.1:8000/thesis/${memoireInfo.numero}?utilisateur_id=${userInfo.utilisateur_id}`, {
         method: "PATCH",

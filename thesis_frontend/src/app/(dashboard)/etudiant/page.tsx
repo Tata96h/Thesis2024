@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import ChoixMaitreMemoire from "@/components/memory/page";
+import PlanificationSoutenances from '@/components/PlanificationSoutenances/page';
 
 import DepotMemoire from "../users/forms/create/memory/page";
 
@@ -263,6 +264,7 @@ const PlanningSection = () => {
     <div className="bg-white p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold mb-4">Planification</h2>
       {/* Ajoutez ici le contenu de la planification lorsqu'il sera disponible */}
+      <PlanificationSoutenances />;
     </div>
   );
 };

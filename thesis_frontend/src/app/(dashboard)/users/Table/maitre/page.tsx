@@ -32,7 +32,7 @@ export default async function Page({ searchParams }: ParamsProps) {
 
   try {
     const response = await fetch(
-      `http://127.0.0.1:8000/thesis/memorant/4/1?limit=1000&offset=0`,
+      `http://127.0.0.1:8000/thesis/memorant_by_dep/${annee_id}/{departement}?departement_id=1&limit=${pageLimit}&offset=${offset}&search=${search}`,
       { cache: "no-store" }
     );
 
@@ -42,17 +42,13 @@ export default async function Page({ searchParams }: ParamsProps) {
       throw new Error("Erreur lors de la récupération des choix");
     }
     const choixRes = await response.json();
-    // console.log(choixRes);
-    const choixRe = JSON.parse(choixRes.theses_with_students.body);
-    const choix = choixRe.theses_with_students;
-
-    console.log(choix);
-    const totalUsers = choixRes.total_count || choix.length;
-
+    choix = JSON.parse(choixRes.theses_with_students);
+    totalUsers = choixRes.total_count || choix.length;
+    
+      console.log(choix);
   } catch (error) {
     console.error("Erreur lors de la récupération des choix:", error);
   }
-
   const pageCount = Math.ceil(totalUsers / pageLimit);
 
   

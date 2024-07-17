@@ -75,6 +75,9 @@
 // }
 
 
+
+
+
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { columns } from "@/components/Tables/choix-tables/columns";
 import { ChoixTable } from "@/components/Tables/choix-tables/choix-tables";
@@ -95,6 +98,7 @@ type ParamsProps = {
     [key: string]: string | string[] | undefined;
   };
 };
+
 
 export default async function Page({ searchParams }: ParamsProps) {
   const page = Number(searchParams.page) || 1;

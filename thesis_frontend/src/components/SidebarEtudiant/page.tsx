@@ -185,7 +185,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 ));
 
                 if (!autreEtudiant) {
-                  return <div>Impossible de trouver un étudiant différent</div>;
+                  return <div></div>;
                 }
 
                 return (
@@ -195,7 +195,7 @@ const SidebarEtudiant = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 );
               } catch (error) {
                 console.error("Error parsing memoireInfo:", error);
-                return <div>Erreur lors du parsing des données</div>;
+                return <div></div>;
               }
             })()
           ) : (
