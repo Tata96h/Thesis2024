@@ -70,7 +70,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
             <Eye className="mr-2 h-4 w-4" /> Voir les détails
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => router.push(`/dashboard/user/${data.id}`)}
+            onClick={() => router.push(`/users/forms/modify/etudiant/${data.utilisateur.id}`)}
           >
             <Edit className="mr-2 h-4 w-4" /> Modifier
           </DropdownMenuItem>

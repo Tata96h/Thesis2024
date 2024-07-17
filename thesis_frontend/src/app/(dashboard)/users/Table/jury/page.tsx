@@ -1,3 +1,7 @@
+
+
+"use client"
+import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { columns } from "@/components/Tables/jurys-tables/columns";
 import { JuryTable } from "@/components/Tables/jurys-tables/jurys-tables";
@@ -18,34 +22,58 @@ type ParamsProps = {
   };
 };
 
-export default async function Page({ searchParams }: ParamsProps) {
+const Page = ({ searchParams }: ParamsProps) => {
+  const [jury, setJury] = useState<Jury[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [anneeId, setAnneeId] = useState(4);
+  const [enseignant, setEnseignant] = useState(null);
+
   const page = Number(searchParams.page) || 1;
   const pageLimit = Number(searchParams.limit) || 10;
   const search = searchParams.search?.toString() || "";
   const offset = (page - 1) * pageLimit;
 
-  let jury: Jury[] = [];
-  let totalUsers = 0;
-  let annee_id = 4;
-
-  try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/jurys/1?limit=1000&offset=0`,
-      { cache: "no-store" }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Erreur lors de la récupération des jury:", errorData);
-      throw new Error("Erreur lors de la récupération des jury");
+  useEffect(() => {
+    const storedEnseignant = localStorage.getItem("enseignantInfo");
+    if (storedEnseignant) {
+      const parsedEnseignant = JSON.parse(storedEnseignant);
+      setEnseignant(parsedEnseignant);
+      console.log(parsedEnseignant);
+      
     }
-    const data = await response.json();
-    jury = data.jurys;
-    totalUsers = jury.length;
-    // console.log(jury);
-  } catch (error) {
-    console.error("Erreur lors de la récupération des jury:", error);
-  }
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!enseignant) return;
+
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/jurys/${enseignant.departement_id}?limit=1000&offset=0`,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error("Erreur lors de la récupération des jury:", errorData);
+            throw new Error("Erreur lors de la récupération des jury");
+          }
+        
+        const juryRes = await response.json();
+        console.log(juryRes);
+        
+        const parsedJury = juryRes.jurys;
+        setJury(parsedJury);
+        console.log(jury);
+        setTotalUsers(parsedJury.length); // Utiliser la longueur des données retournées
+
+      } catch (error) {
+        console.error("Erreur lors de la récupération des jury:", error);
+      }
+    };
+
+    fetchData();
+  }, [enseignant, page, pageLimit, offset, search, anneeId]);
 
   const pageCount = Math.ceil(totalUsers / pageLimit);
 
@@ -81,3 +109,5 @@ export default async function Page({ searchParams }: ParamsProps) {
     </DefaultLayout>
   );
 }
+export default Page;
+

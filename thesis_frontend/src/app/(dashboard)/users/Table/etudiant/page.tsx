@@ -42,7 +42,7 @@ export default async function ListeEtudiant({ searchParams }: paramsProps) {
 
     const etudiantRes = await response.json();
     etudiant = etudiantRes.etudiants;
-   
+    
     
     totalUsers = etudiantRes.total_users; // Remplacez par etudiantRes.total_users si disponible
   } catch (error) {
