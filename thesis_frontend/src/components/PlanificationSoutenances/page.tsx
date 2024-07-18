@@ -262,7 +262,7 @@ const PlanificationSoutenances = () => {
       doc.setFontSize(18);
       doc.text('Planification des Soutenances', 14, 22);
       
-      const columns = ["Date", "Heure", "Thème", "Jury", "Salle", "Étudiant 1", "Étudiant 2"];
+      const columns = ["Date", "Heure", "Thème", "Jury", "Salle", "Étudiant 1", "Étudiant 2","filiere"];
       
       const data = soutenances.map(s => [
         s.date,
@@ -271,7 +271,8 @@ const PlanificationSoutenances = () => {
         s.jury,
         s.salle,
         s.etudiant1 || '-',
-        s.etudiant2 || '-'
+        s.etudiant2 || '-',
+        s.filiere || '-'
       ]);
   
       doc.autoTable({
@@ -317,6 +318,7 @@ const PlanificationSoutenances = () => {
                       <th scope="col" className="px-6 py-3">Salle</th>
                       <th scope="col" className="px-6 py-3">Étudiant 1</th>
                       <th scope="col" className="px-6 py-3">Étudiant 2</th>
+                      <th scope="col" className="px-6 py-3">Filiere</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -329,6 +331,7 @@ const PlanificationSoutenances = () => {
                         <td className="px-6 py-4">{soutenance.salle}</td>
                         <td className="px-6 py-4">{soutenance.etudiant1 || '-'}</td>
                         <td className="px-6 py-4">{soutenance.etudiant2 || '-'}</td>
+                        <td className="px-6 py-4">{soutenance.filiere || '-'}</td>
                       </tr>
                     ))}
                   </tbody>

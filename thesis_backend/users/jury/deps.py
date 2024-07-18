@@ -75,8 +75,8 @@ response_data = {
         'path': '/{numero}',
         'status_code': status.HTTP_200_OK,
     },
-   'jury': {
-        'path': '/{numero}',
+   'jury_by_numero': {
+        'path': '/jury_by_numero/{numero}',
         'status_code': status.HTTP_200_OK,
         'response_model': JurySchema
     },

@@ -165,10 +165,10 @@ const Page = ({ searchParams }: ParamsProps) => {
         <div className="flex items-start justify-between">
           <Heading
             title={`Mémoire (${totalUsers})`}
-            description="Gestion des mémoires par maître mémoire."
+            description="Gestion des mémoires par département."
           />
 
-      <ClientButton /> 
+      {/* <ClientButton />  */}
         </div>
         <Separator />
 

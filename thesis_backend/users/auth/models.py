@@ -264,6 +264,8 @@ class Planification(Base):
     salle = Column(String(length=200), nullable=False)
     annee_id = Column(Integer, ForeignKey('annee.id', ondelete='CASCADE'))
     departement_id = Column(Integer, ForeignKey('departement.id', ondelete='CASCADE'))
+    # departements = Column(String(length=200), nullable=False)
+    filiere = Column(String(length=200), nullable=False)
     thesis_id = Column(Integer,  ForeignKey('soutenance.id', ondelete='CASCADE'), unique=True)
     etudiant1 = Column(String(length=200), nullable=True)
     etudiant2 = Column(String(length=200), nullable=True)

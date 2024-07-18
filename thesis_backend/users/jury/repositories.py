@@ -97,12 +97,6 @@ class JuryRepositories(JuryRepositoriesInterface):
     
     }
    
-    
-   
-
-
-
-
 
 
     async def create_jury(self, jury_data: CreateJurySchema):
@@ -197,8 +191,13 @@ class JuryRepositories(JuryRepositoriesInterface):
         # return result.scalar_one()
         return {'detail': f'Jury numéro {numero} mise à jour'}
     
-    async def get_jury(self, numero: str):
-        # Aliases pour les tables utilisateur pour président, examinateur et rapporteur
+
+
+    async def get_jury(self, 
+            numero: int, 
+            
+        ):
+        # Aliases for user tables for president, examinateur, and rapporteur
         president_user = aliased(Users)
         examinateur_user = aliased(Users)
         rapporteur_user = aliased(Users)
@@ -206,10 +205,10 @@ class JuryRepositories(JuryRepositoriesInterface):
         examinateur_enseignant = aliased(Enseignant)
         rapporteur_enseignant = aliased(Enseignant)
 
-        # Construction de la requête avec les jointures nécessaires
+        # Build the query with necessary joins and where clause for department filtering
         stmt = (
             select(
-                Jury.id, Jury.numero, Jury.president_id, Jury.examinateur_id, Jury.rapporteur_id,
+                Jury.id.label('jury_id'), Jury.numero, Jury.president_id, Jury.examinateur_id, Jury.rapporteur_id,
                 president_user.nom.label('president_nom'), president_user.prenoms.label('president_prenom'),
                 examinateur_user.nom.label('examinateur_nom'), examinateur_user.prenoms.label('examinateur_prenom'),
                 rapporteur_user.nom.label('rapporteur_nom'), rapporteur_user.prenoms.label('rapporteur_prenom')
@@ -221,55 +220,49 @@ class JuryRepositories(JuryRepositoriesInterface):
             .outerjoin(rapporteur_enseignant, Jury.rapporteur_id == rapporteur_enseignant.id)
             .outerjoin(rapporteur_user, rapporteur_enseignant.utilisateur_id == rapporteur_user.id)
             .where(Jury.numero == numero)
+            
         )
 
         result = await self.session.execute(stmt)
-        row = result.fetchone()
+        jurys = result.fetchall()
 
-        if not row:
-            return None
+        # Formatting the result
+        formatted_jurys = []
+        for jury in jurys:
+            formatted_jurys.append({
+                'jury_id': jury.jury_id,
+                'numero': jury.numero,
+                'president': {
+                    'id': jury.president_id,
+                    'nom': jury.president_nom,
+                    'prenom': jury.president_prenom
+                },
+                'examinateur': {
+                    'id': jury.examinateur_id,
+                    'nom': jury.examinateur_nom,
+                    'prenom': jury.examinateur_prenom
+                },
+                'rapporteur': {
+                    'id': jury.rapporteur_id,
+                    'nom': jury.rapporteur_nom,
+                    'prenom': jury.rapporteur_prenom
+                }
+            })
 
-        # Destructuring des valeurs de row
-        (
-            jury_id, jury_numero, president_id, examinateur_id, rapporteur_id,
-            president_nom, president_prenom, examinateur_nom, examinateur_prenom,
-            rapporteur_nom, rapporteur_prenom
-        ) = row
-        print(row)
-        # Construction de l'objet JSON avec les noms et prénoms
-        jury_data = {
-            'id': jury_id,
-            'numero': jury_numero,
-            'president_id': president_id,
-            'examinateur_id': examinateur_id,
-            'rapporteur_id': rapporteur_id,
-            'president': {
-                'id': president_id,
-                'nom': president_nom,
-                'prenom': president_prenom
-            },
-            'examinateur': {
-                'id': examinateur_id,
-                'nom': examinateur_nom,
-                'prenom': examinateur_prenom
-            },
-            'rapporteur': {
-                'id': rapporteur_id,
-                'nom': rapporteur_nom,
-                'prenom': rapporteur_prenom
-            }
-        }
+        # Encodage des données en JSON
+        json_compatible_item_data = jsonable_encoder({"jurys": formatted_jurys})
+        return JSONResponse(content=json_compatible_item_data)
+                        
 
-        return jury_data
 
 
     async def get_jurys_by_departement(self,
-    limit: int, 
-    offset: int, 
-    departement_id: int, 
-    
-):
-        # Aliases for user tables for president, examinateur, and rapporteur
+            limit: int, 
+            offset: int, 
+            departement_id: int, 
+            
+        ):
+                # Aliases for user tables for president, examinateur, and rapporteur
         president_user = aliased(Users)
         examinateur_user = aliased(Users)
         rapporteur_user = aliased(Users)

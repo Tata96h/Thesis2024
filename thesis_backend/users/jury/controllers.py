@@ -55,7 +55,7 @@ async def update_jury(
     data: dict = await get_updated_data_slug_user(updated_data, numero)
     return await presenter.update_jury(**data)
 
-@jury_controllers.get(**response_data.get('jury'))
+@jury_controllers.get(**response_data.get('jury_by_numero'))
 async def get_jury(
         numero: str,
         presenter: JuryPresenter = Depends(get_presenter),

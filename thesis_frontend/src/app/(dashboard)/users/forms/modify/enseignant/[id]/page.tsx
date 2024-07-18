@@ -30,7 +30,6 @@ const ModifyEnseignant = ({ params }) => {
       if (response.ok) {
         const enseignantData = await response.json();
         console.log(enseignantData);
-        console.log(enseignantData);
         
         // Update formData state with enseignantData
         setFormData({
@@ -183,7 +182,7 @@ const handleSubmit = async (e) => {
 
     try {
       const response = await fetch("http://127.0.0.1:8000/enseignants/", {
-        method: "POST",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -213,7 +212,7 @@ const handleSubmit = async (e) => {
            
             <div className="border-b border-stroke px-6.5 py-4 dark:border-strokedark mb-3">
               <h3 className="font-black text-3xl text-blue-500 dark:text-white ">
-                Ajouter un enseignant
+                Modifier un enseignant
               </h3>
               <div className="mt-5">
 

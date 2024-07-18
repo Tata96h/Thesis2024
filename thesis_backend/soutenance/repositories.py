@@ -473,7 +473,8 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     Appartenir.utilisateur_id, Users.nom.label('etudiant_nom'), Users.prenoms.label('etudiant_prenom'),
                     choix1_user.nom.label('choix1_nom'), choix1_user.prenoms.label('choix1_prenom'),
                     choix2_user.nom.label('choix2_nom'), choix2_user.prenoms.label('choix2_prenom'),
-                    maitre_user.nom.label('maitre_nom'), maitre_user.prenoms.label('maitre_prenom')
+                    maitre_user.nom.label('maitre_nom'), maitre_user.prenoms.label('maitre_prenom'),
+                    filiere_alias.nom.label('filiere_nom')  # Ajout de la sélection de la colonne nom de filiere_alias
                 )
                 .join(Appartenir, Thesis.id == Appartenir.soutenance_id)
                 .join(Users, Appartenir.utilisateur_id == Users.id)
@@ -529,7 +530,8 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                             'nom': row.maitre_nom,
                             'prenom': row.maitre_prenom
                         },
-                        'etudiants': []
+                        'etudiants': [],
+                        'filiere': row.filiere_nom  # Ajout du nom de la filière
                     }
                 thesis_dict[thesis_id]['etudiants'].append({
                     'etudiant_id': row.utilisateur_id,
@@ -734,18 +736,27 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
     async def get_planification(self, annee_id: int, departement_id: int, plan_data: PlanificationSchema, db: AsyncSession):
         try:
-            # Ensure annee_id and departement_id are used correctly
             theses_json = await self.get_all_thesis_with_students_by_departement(annee_id, departement_id, limit=1000, offset=0, db=db)
-            
-            # Parse the JSON string into a Python object
             theses = json.loads(theses_json)
             
-            # Rest of the code remains the same
+            # Filtrer les thèses où le thème et le fichier ne sont pas nuls
+            theses = [thesis for thesis in theses if thesis['theme'] and thesis['fichier']]
+            
+            if not theses:
+                raise Exception("Aucune thèse éligible trouvée pour la planification.")
+
+        
+            theses_by_filiere = {}
+            for thesis in theses:
+                filiere = thesis['filiere'] 
+                if filiere not in theses_by_filiere:
+                    theses_by_filiere[filiere] = []
+                theses_by_filiere[filiere].append(thesis)
+
             rooms_stmt = select(Salle).where(Salle.libelle.in_(plan_data.salles))
             result = await db.execute(rooms_stmt)
             rooms = result.scalars().all()
 
-            
             jurys_stmt = (
                 select(Jury)
                 .outerjoin(Enseignant, Jury.president_id == Enseignant.id)
@@ -755,23 +766,26 @@ class ThesisRepositories(ThesisRepositoriesInterface):
             jurys = result.scalars().all()
 
             if len(rooms) == 0 or len(jurys) == 0:
-                raise Exception("Insufficient resources available for planning.")
+                raise Exception("Ressources insuffisantes disponibles pour la planification.")
 
-            # Use plan_data for scheduling
             start_date = plan_data.date
             start_time = plan_data.heure_debut
             end_time = plan_data.heure_fin
 
-            # Schedule defenses
-            planifications = await self.schedule_defenses(theses, rooms, jurys, start_date, start_time, end_time, annee_id, departement_id, db)
-            return planifications
+            all_planifications = []
+            for filiere, filiere_theses in theses_by_filiere.items():
+                planifications = await self.schedule_defenses(filiere_theses, rooms, jurys, start_date, start_time, end_time, annee_id, departement_id, db, filiere)
+                all_planifications.extend(planifications)
+
+            return all_planifications
 
         except Exception as e:
-            print(f"An error occurred: {str(e)}")
+            print(f"Une erreur s'est produite : {str(e)}")
             raise
 
+    
 
-    async def schedule_defenses(self, theses, rooms, jurys, start_date, start_time, end_time, annee_id: int, departement_id: int, db: AsyncSession):
+    async def schedule_defenses(self, theses, rooms, jurys, start_date, start_time, end_time, annee_id: int, departement_id: int, db: AsyncSession, filiere: str):
         schedules = []
         time_slots = ['8h-9h', '9h-10h', '10h-11h', '11h-12h', '12h-13h', '15h-16h', '16h-17h', '17h-18h', '18h-19h']
         
@@ -784,6 +798,8 @@ class ThesisRepositories(ThesisRepositoriesInterface):
         )
         existing_planifications = existing_planifications.scalars().all()
 
+        teacher_availability = defaultdict(lambda: defaultdict(lambda: defaultdict(bool)))
+
         while thesis_index < len(theses):
             for time_slot in time_slots:
                 available_rooms = rooms.copy()
@@ -792,7 +808,6 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                 while available_rooms and available_jurys and thesis_index < len(theses):
                     thesis = theses[thesis_index]
 
-                    # Trouver une salle disponible
                     room = next((r for r in available_rooms if not any(
                         p.date == current_date.strftime('%Y-%m-%d') and
                         p.heure == time_slot and
@@ -801,20 +816,22 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                     )), None)
 
                     if not room:
-                        break  # Aucune salle disponible pour ce créneau
+                        break
 
-                    # Trouver un jury disponible
                     jury = next((j for j in available_jurys if not any(
                         p.date == current_date.strftime('%Y-%m-%d') and
                         p.heure == time_slot and
                         p.jury == str(j.numero)
                         for p in existing_planifications
+                    ) and all(
+                        not teacher_availability[teacher][current_date.strftime('%Y-%m-%d')][time_slot]
+                        for teacher in [j.president_id, j.examinateur_id, j.rapporteur_id]
+                        if teacher is not None
                     )), None)
 
                     if not jury:
-                        break  # Aucun jury disponible pour ce créneau
+                        break
 
-                    # Collecter les noms des étudiants
                     etudiants = [f"{etudiant['prenom']} {etudiant['nom']}" for etudiant in thesis['etudiants']]
                     etudiant1 = etudiants[0] if len(etudiants) > 0 else None
                     etudiant2 = etudiants[1] if len(etudiants) > 1 else None
@@ -829,13 +846,19 @@ class ThesisRepositories(ThesisRepositoriesInterface):
                         'etudiant1': etudiant1,
                         'etudiant2': etudiant2,
                         'annee_id': annee_id,
-                        'departement_id': departement_id
+                        'departement_id': departement_id,
+                        # 'departements': departement_id,
+                        'filiere': filiere 
                     }
 
                     new_planification = Planification(**schedule_entry)
                     db.add(new_planification)
                     schedules.append(schedule_entry)
                     existing_planifications.append(new_planification)
+
+                    for teacher in [jury.president_id, jury.examinateur_id, jury.rapporteur_id]:
+                        if teacher is not None:
+                            teacher_availability[teacher][current_date.strftime('%Y-%m-%d')][time_slot] = True
 
                     available_rooms.remove(room)
                     available_jurys.remove(jury)
@@ -848,7 +871,6 @@ class ThesisRepositories(ThesisRepositoriesInterface):
 
         await db.commit()
         return schedules
-    
 
 
 

@@ -2,6 +2,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Jury } from "@/types/user";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CellAction } from "./cell-ation";
 
 export const columns: ColumnDef<Jury>[] = [
   {
@@ -50,5 +51,10 @@ export const columns: ColumnDef<Jury>[] = [
       const rapporteur = row.original.rapporteur ?? {};
       return rapporteur.nom && rapporteur.prenom ? `${rapporteur.nom} ${rapporteur.prenom}` : '-';
     },
+  },
+  {
+    header: "Actions",
+    id: "actions",
+    cell: ({ row }) => <CellAction data={row.original} />,
   },
 ];

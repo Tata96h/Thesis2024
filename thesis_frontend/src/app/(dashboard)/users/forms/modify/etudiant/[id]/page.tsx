@@ -29,14 +29,13 @@ const ModifyEtudiant = ({ params }) => {
         const etudiantData = await response.json();
         console.log(etudiantData);
         
-        // Update formData state with etudiantData
         setFormData({
-          nom: etudiantData.utilisateur.nom,
-          prenoms: etudiantData.utilisateur.prenoms,
-          filiere_id: etudiantData.filiere.id,
-          username: etudiantData.utilisateur.username,
-          matricule: etudiantData.matricule,
-        
+        nom: etudiantData.utilisateur.nom,
+        prenoms: etudiantData.utilisateur.prenoms,
+        filiere_id: etudiantData.filiere.id,
+        username: etudiantData.utilisateur.username,
+        matricule: etudiantData.matricule,
+      
         });
       } else {
         console.error("Erreur lors de la récupération des détails de l'étudiant :", response.status);
@@ -73,7 +72,7 @@ const ModifyEtudiant = ({ params }) => {
     };
 
     fetchFiliereOptions();
-    fetchEtudiantDetails(); // Fetch student details on component mount
+    fetchEtudiantDetails(); 
   }, []);
 
   const handleNomChange = (event) => {
@@ -119,11 +118,11 @@ const ModifyEtudiant = ({ params }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { nom, prenoms, filiere_id, username } = formData;
-    // Validate form fields here
+    
 
     try {
       const response = await fetch(`http://127.0.0.1:8000/etudiants/${params.id}`, {
-        method: "POST", // Adjust method as per your backend API requirements
+        method: "PATCH", 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -149,7 +148,7 @@ const ModifyEtudiant = ({ params }) => {
          
           <div className="border-b border-stroke px-6.5  py-4 dark:border-strokedark">
             <h3 className="font-black text-3xl text-blue-500 dark:text-white">
-              Ajouter un étudiant
+              Modifier un étudiant
             </h3>
              <div className="mt-5">
 
@@ -210,11 +209,7 @@ const ModifyEtudiant = ({ params }) => {
 
                     onChange={handleUsernameChange}
                   />
-                </div>
-               
-               
-              
-              
+                </div>     
               
               <div className="mb-4.5 gap-6">
               <div className="">
